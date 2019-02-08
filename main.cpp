@@ -11,8 +11,6 @@ int main()
     ofstream fouts("spins.dat"); //магнитные моменты
     ofstream fout_centers("centers.dat"); //центры гексагонов
     
-    int period=3;
-    
     vector <double> coorm; // array for scaled lattice
     vector <double> neighbors; //array of neighbors
     vector <double> coor(24);//array of coordinates of unit cell число координат
@@ -22,7 +20,10 @@ int main()
     vector <double> temp_vector;
     
     double sqrt_3 = sqrt(3);
-    double a = sqrt_3; //параметр решетки
+    double a = sqrt_3/2; //параметр решетки
+    
+    double period_X=4*a;
+    double period_Y=3;
     
     hex_centers[0]=sqrt_3/2;        hex_centers[1]=0.75;
     hex_centers[2]=(3*sqrt_3)/2;    hex_centers[3]=0.75;
@@ -71,10 +72,12 @@ int main()
     mm[20]=0;           mm[21]=1; //1.75
     mm[22]=0;           mm[23]=1; //1.75
     
-    cout<<"Number of spins in the unit cell   = "<<coor.size()/2<<endl;
+    cout<<"Number of spins in the unit cell = "<<coor.size()/2<<endl;
     
-    cout<<"Period of lattice = "<<period<<endl;
+    cout<<"Period X of lattice = "<<period_X<<endl;
+    cout<<"Period Y of lattice = "<<period_Y<<endl;
     
+    /*
     //check of coordinates
     cout<<"{";
     for(unsigned int i=0; i<coor.size(); i+=2)
@@ -90,34 +93,31 @@ int main()
         cout<<"{"<<mm[i]<<","<<mm[i+1]<<"},";
     }
     cout<<"}\n";
-    
+    //*/
     
     int numuc;
     cout<<"Input Number of Unit Cels in linear dimension "<<endl;
     cin>>numuc;
-    cout<<"Lenear size of system in unit cell's spins ="<<numuc*coor.size()/2<<" spins"<<endl;
-    cout<<"Number of spins in system in linear ="<<numuc*coor.size()/2<<endl;
+    cout<<"Lenear size of system in unit cell's spins = "<<numuc*coor.size()/2<<" spins"<<endl;
+    cout<<"Number of spins in system in linear = "<<numuc*coor.size()/2<<endl;
     
     numuc=numuc*numuc;
-    cout<<"Total number of unit cells ="<<numuc<<endl;
-    
-    //if((int)sqrt(numuc*coor.size())!=sqrt(numuc*coor.size()))
-    //goto begin1; //case of nonsquare sample 
+    cout<<"Total number of unit cells = "<<numuc<<endl;
     
     if(sqrt(numuc)==1)
         coorm=coor;
     vector<double> repit;
     vector<double> repitm;
     
-    cout<<"hex_centers.size()_0 = "<<hex_centers.size()<<endl;
-    for(int y=0;y<hex_centers.size(); y+=2)
+    //cout<<"hex_centers.size()_0 = "<<hex_centers.size()<<endl;
+    for(unsigned int y=0;y<hex_centers.size(); y+=2)
     {
         for(int j=0; j<sqrt(numuc); j++ )
         {
             if(hex_centers[y]!=hex_centers[y+2])
             {
                 temp_vector.push_back(hex_centers[y]);
-                temp_vector.push_back(hex_centers[y+1]+period*j);
+                temp_vector.push_back(hex_centers[y+1]+period_Y*j);
             }
             else
             {
@@ -131,16 +131,16 @@ int main()
                     repit.push_back(hex_centers[y+1]);
                 }
                 
-                for(int i=0; i<repit.size(); i++)
+                for(unsigned int i=0; i<repit.size(); i++)
                 {
                     temp_vector.push_back(repit[i]);
                 }
                 
                 for(int k=j+1; k<sqrt(numuc); k++)
                 {
-                    for(int i=0; i<repit.size(); i+=2)
+                    for(unsigned int i=0; i<repit.size(); i+=2)
                     { 
-                        temp_vector.push_back(repit[i]);  temp_vector.push_back(repit[i+1]+period*k);
+                        temp_vector.push_back(repit[i]);  temp_vector.push_back(repit[i+1]+period_Y*k);
                     }
                 }
                 j=sqrt(numuc);
@@ -149,17 +149,17 @@ int main()
         }
     }
     hex_centers=temp_vector;
-    cout<<"hex_centers.size()_1 = "<<hex_centers.size()<<endl;
+    //cout<<"hex_centers.size()_1 = "<<hex_centers.size()<<endl;
     
     //scaling over y and ordering of array of coorm and magnetic moments
-    for(int y=0;y<coor.size(); y+=2)
+    for(unsigned int y=0;y<coor.size(); y+=2)
     {
         for(int j=0; j<sqrt(numuc); j++ )
         {
             if(coor[y]!=coor[y+2])
             {
                 coorm.push_back (coor[y]);
-                coorm.push_back (coor[y+1]+period*j);
+                coorm.push_back (coor[y+1]+period_Y*j);
                 
                 mxmy.push_back(mm[y]);
                 mxmy.push_back(mm[y+1]); 
@@ -180,15 +180,15 @@ int main()
                     repitm.push_back(mm[y+1]);
                 }
                 
-                for(int i=0; i<repit.size(); i++)
+                for(unsigned int i=0; i<repit.size(); i++)
                 {
                     coorm.push_back(repit[i]);
                     mxmy.push_back(repitm[i]);
                 }
                 for(int k=j+1; k<sqrt(numuc); k++)
-                    for(int i=0; i<repit.size(); i+=2)
+                    for(unsigned int i=0; i<repit.size(); i+=2)
                     { 
-                        coorm.push_back(repit[i]);  coorm.push_back(repit[i+1]+period*k);
+                        coorm.push_back(repit[i]);  coorm.push_back(repit[i+1]+period_Y*k);
                         mxmy.push_back(repitm[i]);  mxmy.push_back(repitm[i+1]);
                     }
                 j=sqrt(numuc);
@@ -204,26 +204,26 @@ int main()
     
     for(int j=1; j<sqrt(numuc); j++ )
     {
-        for(int x=0;x<coor.size(); x+=2)
+        for(unsigned int x=0;x<coor.size(); x+=2)
         {
-            coorm.push_back(coor[x]+(period+0.5)*j);
+            coorm.push_back(coor[x]+period_X*j);
             coorm.push_back(coor[x+1]);
             
             mxmy.push_back(mm[x]);
             mxmy.push_back(mm[x+1]); 
         }
-        for(int x=0;x<hex_centers.size(); x+=2)
+        for(unsigned int x=0;x<hex_centers.size(); x+=2)
         {
-            temp_vector.push_back(hex_centers[x]+(period+0.5)*j);
+            temp_vector.push_back(hex_centers[x]+period_X*j);
             temp_vector.push_back(hex_centers[x+1]);
         }
     }
     hex_centers=temp_vector;
-    cout<<"hex_centers.size()_2 = "<<hex_centers.size()<<endl;
+    //cout<<"hex_centers.size()_2 = "<<hex_centers.size()<<endl;
     
-    cout<<"check of coordinates\n";
+    //запись координат в файл
     foutc<<"{";
-    for(int i=0; i<coorm.size(); i+=2)
+    for(unsigned int i=0; i<coorm.size(); i+=2)
     {
         if(i!=coorm.size()-2)
             foutc<<"{"<<coorm[i]<<","<<coorm[i+1]<<"},";
@@ -233,13 +233,11 @@ int main()
     foutc<<"}\n\n";
     foutc.close();
     
+    cout<<"  Number of spins in system = "<<(coorm.size()+1)/2<<endl;
     
-    cout<<"last spin="<<coorm[coorm.size()-2]<<endl;
-    cout<<"  Number of spins in system ="<<(coorm.size()+1)/2<<endl;
-    
-    cout<<"check of magnetic moments\n";
+    //запись магнитных моментов в файл
     fouts<<"{";
-    for(int i=0; i<coorm.size(); i+=2)
+    for(unsigned int i=0; i<coorm.size(); i+=2)
     {
         if(i!=coorm.size()-2)
             fouts<<"{{"<<coorm[i]-mxmy[i]/2<<","<<coorm[i+1]-mxmy[i+1]/2<<"},{"<<coorm[i]+mxmy[i]/2<<","<<coorm[i+1]+mxmy[i+1]/2<<"}},";
@@ -265,27 +263,41 @@ int main()
     
     
     //calculation of neighbors
-    double r, max_X, max_Y, min_X, min_Y; 
+    double r, max_X_of_centers, max_Y_of_centers, min_Y_of_centers; 
     //double cs = 3/4; //coordination sphere in square
     //cout<<"Input radius of coordination sphere"<<endl;
     //cin>>r;
     
-    vector <vector <int> > hex_array(hex_centers.size()/2);
-    cout<<"hex_array.size() = " << hex_array.size() <<endl;
-    cout<<"coorm.size() = " << coorm.size() <<endl;
+    max_X_of_centers=hex_centers[0];
+    max_Y_of_centers=hex_centers[1];
+    min_Y_of_centers=hex_centers[1];
+    for(unsigned int i=2; i<hex_centers.size(); i+=2)
+    {
+        if(max_X_of_centers<hex_centers[i]) max_X_of_centers = hex_centers[i];
+        if(min_Y_of_centers>hex_centers[i+1]) min_Y_of_centers = hex_centers[i+1];
+        if(max_Y_of_centers<hex_centers[i+1]) max_Y_of_centers = hex_centers[i+1];
+    }
+    //cout<<"max_X = "<<max_X_of_centers<<endl<<endl;
     
-    unsigned int k=0;
+    ///вывод всех спинов на экран
+    //for(unsigned int i=0; i<coorm.size(); i+=2) cout<<"["<<i/2<<"] "<<coorm[i]<<", "<<coorm[i+1]<<endl;
+    
+    vector <vector <double> > hex_array(hex_centers.size()/2);
+    cout<<"Number of hexagons = " << hex_array.size()/2 <<endl;
+    
     int num_spins_in_core=0;
     for(unsigned int x=0; x<hex_centers.size(); x+=2)
     {
         for(unsigned int i=0; i<coorm.size(); i+=2)
         {
+            //определяем спины, которые входят в гексагон
             r=(hex_centers[x]-coorm[i])*(hex_centers[x]-coorm[i])+
                     (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
+            
             if(r<=((double)3/4)+0.0001)
             {
-                hex_array[k].push_back(coorm[i]);
-                hex_array[k].push_back(coorm[i+1]);
+                hex_array[x/2].push_back(coorm[i]);
+                hex_array[x/2].push_back(coorm[i+1]);
                 num_spins_in_core++;
                 //cout<<"hex["<<k<<"] = ";
                 //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
@@ -296,59 +308,92 @@ int main()
                     break;
                 }
             }
-            r=(hex_centers[x]-(hex_centers[x]+coorm[i]))*(hex_centers[x]-(hex_centers[x]+coorm[i]))+
-                    (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
-            if(r<=((double)3/4)+0.0001)
-            {
-                hex_array[k].push_back(coorm[i]);
-                hex_array[k].push_back(coorm[i+1]);
-                num_spins_in_core++;
-                if(num_spins_in_core == 6)
-                {
-                    //cout<<"hex["<<k<<"] = ";
-                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                    break;
-                }
-            }
             
-            r=(hex_centers[x]-coorm[i])*(hex_centers[x]-coorm[i])+
-                    (hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]))*(hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]));
-            if(r<=((double)3/4)+0.0001)
-            {
-                hex_array[k].push_back(coorm[i]);
-                hex_array[k].push_back(coorm[i+1]);
-                num_spins_in_core++;
-                if(num_spins_in_core == 6)
-                {
-                    //cout<<"hex["<<k<<"] = ";
-                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                    break;
-                }
-            }
             
-            r=(hex_centers[x]-(hex_centers[x]+coorm[i]))*(hex_centers[x]-(hex_centers[x]+coorm[i]))+
-                    (hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]))*(hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]));
-            if(r<=((double)3/4)+0.0001)
+            if(i==coorm.size()-2 && num_spins_in_core<6)
             {
-                hex_array[k].push_back(coorm[i]);
-                hex_array[k].push_back(coorm[i+1]);
-                num_spins_in_core++;
-                if(num_spins_in_core == 6)
+                for(unsigned int ii=0; ii<coorm.size(); ii+=2)
                 {
-                    //cout<<"hex["<<k<<"] = ";
-                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                    break;
+                    //сдвигаем по X
+                    r=(hex_centers[x]-(max_X_of_centers+coorm[ii]))*(hex_centers[x]-(max_X_of_centers+coorm[ii]))+
+                            (hex_centers[x+1]-coorm[ii+1])*(hex_centers[x+1]-coorm[ii+1]);
+                    
+                    if(r<=((double)3/4)+0.0001)
+                    {
+                        hex_array[x/2].push_back(coorm[ii]);
+                        hex_array[x/2].push_back(coorm[ii+1]);
+                        num_spins_in_core++;
+                        if(num_spins_in_core == 6)
+                        {
+                            //cout<<"hex["<<k<<"] = ";
+                            //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                            break;
+                        }
+                    }
+                    
+                    if(ii==coorm.size()-2 && num_spins_in_core<6)
+                    {
+                        for(unsigned int iii=0; iii<coorm.size(); iii+=2)
+                        {
+                            //сдвигаем по Y
+                            r=(hex_centers[x]-coorm[iii])*(hex_centers[x]-coorm[iii])+
+                                    (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iii+1]));
+                            
+                            if(r<=((double)3/4)+0.0001)
+                            {
+                                hex_array[x/2].push_back(coorm[iii]);
+                                hex_array[x/2].push_back(coorm[iii+1]);
+                                num_spins_in_core++;
+                                if(num_spins_in_core == 6)
+                                {
+                                    //cout<<"hex["<<k<<"] = ";
+                                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                    break;
+                                }
+                            }
+                            
+                            if(iii==coorm.size()-2 && num_spins_in_core<6)
+                            {
+                                for(unsigned int iiii=0; iiii<coorm.size(); iiii+=2)
+                                {
+                                    //сдвигаем по диагонали
+                                    r=(hex_centers[x]-(max_X_of_centers+coorm[iiii]))*(hex_centers[x]-(max_X_of_centers+coorm[iiii]))+
+                                            (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]));
+                                    
+                                    if(r<=((double)3/4)+0.0001)
+                                    {
+                                        hex_array[x/2].push_back(coorm[iiii]);
+                                        hex_array[x/2].push_back(coorm[iiii+1]);
+                                        num_spins_in_core++;
+                                        if(num_spins_in_core == 6)
+                                        {
+                                            //cout<<"hex["<<k<<"] = ";
+                                            //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         num_spins_in_core=0;
-        cout<<"hex["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
-        cout<<hex_array[k].size()<<endl;
-        k++;
+        //cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
+        //cout<<hex_array[x/2].size()<<endl;
+        if(hex_array[x/2].size()!=12)
+        {
+            cout<<"Неверный размер гексагона!!!!!!!"<<endl;
+            cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
+            cout<<hex_array[x/2].size()<<endl;
+        }
+        ///вывод на экран всех спинов, входящих в гексагон
+        //for(unsigned int c=0; c<hex_array[x/2].size(); c+=2) cout<<hex_array[x/2][c]<<", "<<hex_array[x/2][c+1]<<endl;
     }
     
     
-    system("pause");
+    //system("pause");
     
     
     cout << "\nThe End\n";
