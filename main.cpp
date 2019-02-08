@@ -22,6 +22,7 @@ int main()
     vector <double> temp_vector;
     
     double sqrt_3 = sqrt(3);
+    double a = sqrt_3; //параметр решетки
     
     hex_centers[0]=sqrt_3/2;        hex_centers[1]=0.75;
     hex_centers[2]=(3*sqrt_3)/2;    hex_centers[3]=0.75;
@@ -264,9 +265,89 @@ int main()
     
     
     //calculation of neighbors
-    double r, max_X, max_Y; 
-    cout<<"Input radius of coordination sphere"<<endl;
-    cin>>r;
+    double r, max_X, max_Y, min_X, min_Y; 
+    //double cs = 3/4; //coordination sphere in square
+    //cout<<"Input radius of coordination sphere"<<endl;
+    //cin>>r;
+    
+    vector <vector <int> > hex_array(hex_centers.size()/2);
+    cout<<"hex_array.size() = " << hex_array.size() <<endl;
+    cout<<"coorm.size() = " << coorm.size() <<endl;
+    
+    unsigned int k=0;
+    int num_spins_in_core=0;
+    for(unsigned int x=0; x<hex_centers.size(); x+=2)
+    {
+        for(unsigned int i=0; i<coorm.size(); i+=2)
+        {
+            r=(hex_centers[x]-coorm[i])*(hex_centers[x]-coorm[i])+
+                    (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
+            if(r<=((double)3/4)+0.0001)
+            {
+                hex_array[k].push_back(coorm[i]);
+                hex_array[k].push_back(coorm[i+1]);
+                num_spins_in_core++;
+                //cout<<"hex["<<k<<"] = ";
+                //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                if(num_spins_in_core == 6)
+                {
+                    //cout<<"hex["<<k<<"] = ";
+                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                    break;
+                }
+            }
+            r=(hex_centers[x]-(hex_centers[x]+coorm[i]))*(hex_centers[x]-(hex_centers[x]+coorm[i]))+
+                    (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
+            if(r<=((double)3/4)+0.0001)
+            {
+                hex_array[k].push_back(coorm[i]);
+                hex_array[k].push_back(coorm[i+1]);
+                num_spins_in_core++;
+                if(num_spins_in_core == 6)
+                {
+                    //cout<<"hex["<<k<<"] = ";
+                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                    break;
+                }
+            }
+            
+            r=(hex_centers[x]-coorm[i])*(hex_centers[x]-coorm[i])+
+                    (hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]))*(hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]));
+            if(r<=((double)3/4)+0.0001)
+            {
+                hex_array[k].push_back(coorm[i]);
+                hex_array[k].push_back(coorm[i+1]);
+                num_spins_in_core++;
+                if(num_spins_in_core == 6)
+                {
+                    //cout<<"hex["<<k<<"] = ";
+                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                    break;
+                }
+            }
+            
+            r=(hex_centers[x]-(hex_centers[x]+coorm[i]))*(hex_centers[x]-(hex_centers[x]+coorm[i]))+
+                    (hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]))*(hex_centers[x+1]-(hex_centers[x+1]+coorm[i+1]));
+            if(r<=((double)3/4)+0.0001)
+            {
+                hex_array[k].push_back(coorm[i]);
+                hex_array[k].push_back(coorm[i+1]);
+                num_spins_in_core++;
+                if(num_spins_in_core == 6)
+                {
+                    //cout<<"hex["<<k<<"] = ";
+                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                    break;
+                }
+            }
+        }
+        num_spins_in_core=0;
+        cout<<"hex["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
+        cout<<hex_array[k].size()<<endl;
+        k++;
+    }
+    
+    
     system("pause");
     
     
