@@ -283,14 +283,17 @@ int main()
     //for(unsigned int i=0; i<coorm.size(); i+=2) cout<<"["<<i/2<<"] "<<coorm[i]<<", "<<coorm[i+1]<<endl;
     
     vector <vector <double> > hex_array(hex_centers.size()/2);
-    cout<<"Number of hexagons = " << hex_array.size()/2 <<endl;
+    vector <vector <double> > bound_array(hex_centers.size()/2);
+    cout<<"Number of hexagons = " << hex_array.size() <<endl;
     
     int num_spins_in_core=0;
+    int num_spins_on_bound=0;
+    
     for(unsigned int x=0; x<hex_centers.size(); x+=2)
     {
         for(unsigned int i=0; i<coorm.size(); i+=2)
         {
-            //определяем спины, которые входят в гексагон
+            //определяем спины, которые входят в гексагон и границу
             r=(hex_centers[x]-coorm[i])*(hex_centers[x]-coorm[i])+
                     (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
             
@@ -301,16 +304,31 @@ int main()
                 num_spins_in_core++;
                 //cout<<"hex["<<k<<"] = ";
                 //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                if(num_spins_in_core == 6)
+                if(num_spins_in_core == 6 && num_spins_on_bound == 24)
                 {
                     //cout<<"hex["<<k<<"] = ";
                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
                     break;
                 }
             }
+            else
+            {
+                if(r<=((double)27/4)+0.0001)
+                {
+                    bound_array[x/2].push_back(coorm[i]);
+                    bound_array[x/2].push_back(coorm[i+1]);
+                    num_spins_on_bound++;
+                    if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                    {
+                        //cout<<"hex["<<k<<"] = ";
+                        //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                        break;
+                    }
+                }
+            }
             
             
-            if(i==coorm.size()-2 && num_spins_in_core<6)
+            if(i==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
             {
                 for(unsigned int ii=0; ii<coorm.size(); ii+=2)
                 {
@@ -323,15 +341,30 @@ int main()
                         hex_array[x/2].push_back(coorm[ii]);
                         hex_array[x/2].push_back(coorm[ii+1]);
                         num_spins_in_core++;
-                        if(num_spins_in_core == 6)
+                        if(num_spins_in_core == 6 && num_spins_on_bound == 24)
                         {
                             //cout<<"hex["<<k<<"] = ";
                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
                             break;
                         }
                     }
+                    else
+                    {
+                        if(r<=((double)27/4)+0.0001)
+                        {
+                            bound_array[x/2].push_back(coorm[ii]);
+                            bound_array[x/2].push_back(coorm[ii+1]);
+                            num_spins_on_bound++;
+                            if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                            {
+                                //cout<<"hex["<<k<<"] = ";
+                                //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                break;
+                            }
+                        }
+                    }
                     
-                    if(ii==coorm.size()-2 && num_spins_in_core<6)
+                    if(ii==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
                     {
                         for(unsigned int iii=0; iii<coorm.size(); iii+=2)
                         {
@@ -344,19 +377,34 @@ int main()
                                 hex_array[x/2].push_back(coorm[iii]);
                                 hex_array[x/2].push_back(coorm[iii+1]);
                                 num_spins_in_core++;
-                                if(num_spins_in_core == 6)
+                                if(num_spins_in_core == 6 && num_spins_on_bound == 24)
                                 {
                                     //cout<<"hex["<<k<<"] = ";
                                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
                                     break;
                                 }
                             }
+                            else
+                            {
+                                if(r<=((double)27/4)+0.0001)
+                                {
+                                    bound_array[x/2].push_back(coorm[iii]);
+                                    bound_array[x/2].push_back(coorm[iii+1]);
+                                    num_spins_on_bound++;
+                                    if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                    {
+                                        //cout<<"hex["<<k<<"] = ";
+                                        //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                        break;
+                                    }
+                                }
+                            }
                             
-                            if(iii==coorm.size()-2 && num_spins_in_core<6)
+                            if(iii==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
                             {
                                 for(unsigned int iiii=0; iiii<coorm.size(); iiii+=2)
                                 {
-                                    //сдвигаем по диагонали
+                                    //сдвигаем по диагонали (X и Y)
                                     r=(hex_centers[x]-(max_X_of_centers+coorm[iiii]))*(hex_centers[x]-(max_X_of_centers+coorm[iiii]))+
                                             (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]));
                                     
@@ -365,11 +413,141 @@ int main()
                                         hex_array[x/2].push_back(coorm[iiii]);
                                         hex_array[x/2].push_back(coorm[iiii+1]);
                                         num_spins_in_core++;
-                                        if(num_spins_in_core == 6)
+                                        if(num_spins_in_core == 6 && num_spins_on_bound == 24)
                                         {
                                             //cout<<"hex["<<k<<"] = ";
                                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
                                             break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if(r<=((double)27/4)+0.0001)
+                                        {
+                                            bound_array[x/2].push_back(coorm[iiii]);
+                                            bound_array[x/2].push_back(coorm[iiii+1]);
+                                            num_spins_on_bound++;
+                                            if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                            {
+                                                //cout<<"hex["<<k<<"] = ";
+                                                //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if(iiii==coorm.size()-2 && num_spins_on_bound<24)
+                                    {
+                                        for(unsigned int iiiii=0; iiiii<coorm.size(); iiiii+=2)
+                                        {
+                                            //сдвигаем по -X
+                                            r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiii]))+
+                                                    (hex_centers[x+1]-coorm[iiiii+1])*(hex_centers[x+1]-coorm[iiiii+1]);
+                                            
+                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                            {
+                                                bound_array[x/2].push_back(coorm[iiiii]);
+                                                bound_array[x/2].push_back(coorm[iiiii+1]);
+                                                num_spins_on_bound++;
+                                                if(num_spins_on_bound == 24)
+                                                {
+                                                    //cout<<"hex["<<k<<"] = ";
+                                                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                    break;
+                                                }
+                                            }
+                                            
+                                            if(iiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                            {
+                                                for(unsigned int iiiiii=0; iiiiii<coorm.size(); iiiiii+=2)
+                                                {
+                                                    //сдвигаем по Y
+                                                    r=(hex_centers[x]-coorm[iiiiii])*(hex_centers[x]-coorm[iiiiii])+
+                                                            (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiii+1]));
+                                                    
+                                                    if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                    {
+                                                        bound_array[x/2].push_back(coorm[iiiiii]);
+                                                        bound_array[x/2].push_back(coorm[iiiiii+1]);
+                                                        num_spins_on_bound++;
+                                                        if(num_spins_on_bound == 24)
+                                                        {
+                                                            //cout<<"hex["<<k<<"] = ";
+                                                            //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                            break;
+                                                        }
+                                                    }
+                                                    
+                                                    if(iiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                    {
+                                                        for(unsigned int iiiiiii=0; iiiiiii<coorm.size(); iiiiiii+=2)
+                                                        {
+                                                            //сдвигаем по диагонали (-X и -Y)
+                                                            r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiii]))+
+                                                                    (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiii+1]));
+                                                            
+                                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                            {
+                                                                bound_array[x/2].push_back(coorm[iiiiiii]);
+                                                                bound_array[x/2].push_back(coorm[iiiiiii+1]);
+                                                                num_spins_on_bound++;
+                                                                if(num_spins_on_bound == 24)
+                                                                {
+                                                                    //cout<<"hex["<<k<<"] = ";
+                                                                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                                    break;
+                                                                }
+                                                            }
+                                                            
+                                                            if(iiiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                            {
+                                                                for(unsigned int iiiiiiii=0; iiiiiiii<coorm.size(); iiiiiiii+=2)
+                                                                {
+                                                                    //сдвигаем по диагонали (-X и Y)
+                                                                    r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiiii]))+
+                                                                            (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiiiiiii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiiiiiii+1]));
+                                                                    
+                                                                    if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                                    {
+                                                                        bound_array[x/2].push_back(coorm[iiiiiiii]);
+                                                                        bound_array[x/2].push_back(coorm[iiiiiiii+1]);
+                                                                        num_spins_on_bound++;
+                                                                        if(num_spins_on_bound == 24)
+                                                                        {
+                                                                            //cout<<"hex["<<k<<"] = ";
+                                                                            //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    if(iiiiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                                    {
+                                                                        for(unsigned int iiiiiiiii=0; iiiiiiiii<coorm.size(); iiiiiiiii+=2)
+                                                                        {
+                                                                            //сдвигаем по диагонали (X и -Y)
+                                                                            r=(hex_centers[x]-(max_X_of_centers+coorm[iiiiiiiii]))*(hex_centers[x]-(max_X_of_centers+coorm[iiiiiiiii]))+
+                                                                                    (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiiiii+1]));
+                                                                            
+                                                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                                            {
+                                                                                bound_array[x/2].push_back(coorm[iiiiiiiii]);
+                                                                                bound_array[x/2].push_back(coorm[iiiiiiiii+1]);
+                                                                                num_spins_on_bound++;
+                                                                                if(num_spins_on_bound == 24)
+                                                                                {
+                                                                                    //cout<<"hex["<<k<<"] = ";
+                                                                                    //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -380,14 +558,26 @@ int main()
             }
         }
         num_spins_in_core=0;
+        num_spins_on_bound=0;
+        
         //cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
-        //cout<<hex_array[x/2].size()<<endl;
+        //cout<<hex_array[x/2].size()/2<<endl;
+        //cout<<bound_array[x/2].size()/2<<endl;
+        
         if(hex_array[x/2].size()!=12)
         {
-            cout<<"Неверный размер гексагона!!!!!!!"<<endl;
+            cout<<endl<<"Wrong hex size!!!!!!!!!!!!!!!!!!!!!"<<endl;
             cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
-            cout<<hex_array[x/2].size()<<endl;
+            cout<<hex_array[x/2].size()/2<<endl<<endl;
         }
+        
+        if(bound_array[x/2].size()!=48)
+        {
+            cout<<endl<<"Wrong border size!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
+            cout<<bound_array[x/2].size()/2<<endl<<endl;
+        }
+        
         ///вывод на экран всех спинов, входящих в гексагон
         //for(unsigned int c=0; c<hex_array[x/2].size(); c+=2) cout<<hex_array[x/2][c]<<", "<<hex_array[x/2][c+1]<<endl;
     }
