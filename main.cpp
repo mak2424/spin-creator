@@ -554,6 +554,7 @@ int main()
         //cout<<hex_array[x/2].size()/2<<endl;
         //cout<<bound_array[x/2].size()/2<<endl;
         
+        //проверка на правильное количество спинов в каждом гексагоне
         if(hex_array[x/2].size()!=6)
         {
             cout<<endl<<"Wrong hex size!!!!!!!!!!!!!!!!!!!!!"<<endl;
@@ -561,6 +562,7 @@ int main()
             cout<<hex_array[x/2].size()<<endl<<endl;
         }
         
+        //проверка на правильное количество спинов на границе каждого гексагона
         if(bound_array[x/2].size()!=24)
         {
             cout<<endl<<"Wrong border size!!!!!!!!!!!!!!!!!!!!!"<<endl;
@@ -573,7 +575,17 @@ int main()
     }
     
     
-    vector <vector <double> > neighbors(coorm.size()/2); //array of neighbors
+    struct spin_struct
+    {
+        unsigned int number;
+        double x;
+        double y;
+        
+        //конструктор
+        spin_struct(unsigned int number, double x, double y){spin_struct::number = number; spin_struct::x = x; spin_struct::y = y; }
+    };
+
+    vector <vector <spin_struct> > neighbors(coorm.size()/2); //array of neighbors
     int num_of_neighbors=0;
     
     cout<<"\nneighbors\n";
@@ -587,7 +599,7 @@ int main()
             
             if(i!=j && r<=4*a+0.0001)
             {
-                neighbors[i/2].push_back(j);
+                neighbors[i/2].push_back(spin_struct(j,coorm[j],coorm[j+1]));
                 num_of_neighbors++;
                 if(num_of_neighbors == 14)
                 {
@@ -607,7 +619,7 @@ int main()
                     
                     if(i!=jj && r<=4*a+0.0001)
                     {
-                        neighbors[i/2].push_back(jj);
+                        neighbors[i/2].push_back(spin_struct(jj,max_X_of_centers+coorm[jj],coorm[jj+1]));
                         num_of_neighbors++;
                         if(num_of_neighbors == 14)
                         {
@@ -627,7 +639,7 @@ int main()
                             
                             if(i!=jjj && r<=4*a+0.0001)
                             {
-                                neighbors[i/2].push_back(jjj);
+                                neighbors[i/2].push_back(spin_struct(jjj, -max_X_of_centers+coorm[jjj], coorm[jjj+1]));
                                 num_of_neighbors++;
                                 if(num_of_neighbors == 14)
                                 {
@@ -647,7 +659,7 @@ int main()
                                     
                                     if(i!=jjjj && r<=4*a+0.0001)
                                     {
-                                        neighbors[i/2].push_back(jjjj);
+                                        neighbors[i/2].push_back(spin_struct(jjjj, coorm[jjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjj+1]));
                                         num_of_neighbors++;
                                         if(num_of_neighbors == 14)
                                         {
@@ -668,7 +680,7 @@ int main()
                                             
                                             if(i!=jjjjj && r<=4*a+0.0001)
                                             {
-                                                neighbors[i/2].push_back(jjjjj);
+                                                neighbors[i/2].push_back(spin_struct(jjjjj, coorm[jjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjj+1]));
                                                 num_of_neighbors++;
                                                 if(num_of_neighbors == 14)
                                                 {
@@ -688,7 +700,7 @@ int main()
                                                     
                                                     if(i!=jjjjjj && r<=4*a+0.0001)
                                                     {
-                                                        neighbors[i/2].push_back(jjjjjj);
+                                                        neighbors[i/2].push_back(spin_struct(jjjjjj, max_X_of_centers+coorm[jjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjj+1]));
                                                         num_of_neighbors++;
                                                         if(num_of_neighbors == 14)
                                                         {
@@ -708,7 +720,7 @@ int main()
                                                             
                                                             if(i!=jjjjjjj && r<=4*a+0.0001)
                                                             {
-                                                                neighbors[i/2].push_back(jjjjjjj);
+                                                                neighbors[i/2].push_back(spin_struct(jjjjjjj, -max_X_of_centers+coorm[jjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjj+1]));
                                                                 num_of_neighbors++;
                                                                 if(num_of_neighbors == 14)
                                                                 {
@@ -728,7 +740,7 @@ int main()
                                                                     
                                                                     if(i!=jjjjjjjj && r<=4*a+0.0001)
                                                                     {
-                                                                        neighbors[i/2].push_back(jjjjjjjj);
+                                                                        neighbors[i/2].push_back(spin_struct(jjjjjjjj, max_X_of_centers+coorm[jjjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjjj+1]));
                                                                         num_of_neighbors++;
                                                                         if(num_of_neighbors == 14)
                                                                         {
@@ -748,7 +760,7 @@ int main()
                                                                             
                                                                             if(i!=jjjjjjjjj && r<=4*a+0.0001)
                                                                             {
-                                                                                neighbors[i/2].push_back(jjjjjjjjj);
+                                                                                neighbors[i/2].push_back(spin_struct(jjjjjjjjj, -max_X_of_centers+coorm[jjjjjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjjjjj+1]));
                                                                                 num_of_neighbors++;
                                                                                 if(num_of_neighbors == 14)
                                                                                 {
@@ -779,6 +791,7 @@ int main()
         
         //cout << i/2 << ": " << neighbors[i/2].size()/2 << endl;
         
+        //проверка на правильное количество соседей
         if(neighbors[i/2].size()!=14)
         {
             cout<<endl<<"Wrong number of neighbors!!!!!!!!!!!!!!!!!!!!!"<<endl;
@@ -786,6 +799,21 @@ int main()
             cout<<neighbors[i/2].size()<<endl<<endl;
         }
     }
+    
+    //проверяем спин на правильность соседей
+    /*
+    cout<<"spin "<<47<<" ["<<coorm[47*2]<<", "<<coorm[47*2+1]<<"] = ";
+    cout<<neighbors[47].size()<<" neighbors"<<endl<<endl;
+    for(unsigned int i=0; i<neighbors[47].size(); ++i)
+    {
+        //выводим номера соседних спинов
+        cout<<i<<": "<< neighbors[47][i].number/2;
+        //выводим координаты соседних спинов
+        cout<<" ["<<neighbors[47][i].x<<", "<<neighbors[47][i].y<<"]";
+        cout<<" (["<<coorm[neighbors[47][i].number]<<", "<<coorm[neighbors[47][i].number+1]<<"])\n";
+    }
+    //*/
+    
     
     
     //расчет энергии
