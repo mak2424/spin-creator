@@ -1,9 +1,16 @@
 #include <iostream>
 #include <vector>
-#include <stdlib.h>
-#include <math.h>
+//#include <stdlib.h>
+#include <cmath>
 #include <fstream>
+#include <map>
+
+#define DBL_EPSILON 2.2204460492503131e-16
+//typedef unsigned long long ulong;
+
 using namespace std;
+
+bool is_equal(double a, double b) { return fabs(a-b) <= DBL_EPSILON * fmax(fabs(a),fabs(b)); }
 
 int main()
 {
@@ -20,6 +27,18 @@ int main()
     
     double sqrt_3 = sqrt(3);
     double a = sqrt_3/2; //параметр решетки
+    
+    unsigned int total_num_of_spins_in_core = 6; //количество спинов в ядре
+    unsigned int total_num_of_spins_in_boundaries = 18; //количество спинов на границе = 24
+    unsigned int total_num_of_neighbors = 8; //количество соседей для каждого спина (для проверки)
+    
+    double interaction_radius_squared_for_core = 3/4. + 0.0001; //радиус взаимодействия в квадрате (от центра гексагона), 
+                                              //используется для определения ядра и границы
+    double interaction_radius_squared_for_border = 27/4. - 0.0001; //радиус взаимодействия в квадрате (от центра гексагона), 
+                                              //используется для определения границы (+ 0.0001)
+    double interaction_radius_squared_for_neighbors = 3. - 0.0001; //(2*a)^2, радиус взаимодействия в квадрате (от спина до спина), 
+                                              //используется для определения соседей
+    cout << "interaction_radius_squared = " << interaction_radius_squared_for_core << endl;
     
     double period_X=4*a;
     double period_Y=3;
@@ -286,10 +305,13 @@ int main()
     vector <vector <double> > hex_array(hex_centers.size()/2);
     vector <vector <double> > bound_array(hex_centers.size()/2);
     
+    map <double,map <double,unsigned int>> temp_core;
+    map <double,map <double,unsigned int>> temp_bound;
+    
     cout<<"Number of hexagons = " << hex_array.size() <<endl;
     
-    int num_spins_in_core=0;
-    int num_spins_on_bound=0;
+    unsigned int counter_spins_in_core=0;
+    unsigned int counter_spins_on_bound=0;
     
     for(unsigned int x=0; x<hex_centers.size(); x+=2)
     {
@@ -300,36 +322,38 @@ int main()
                     (hex_centers[x+1]-coorm[i+1])*(hex_centers[x+1]-coorm[i+1]);
             
             //для гексагона
-            if(r<=((double)3/4)+0.0001)
+            if(r<=interaction_radius_squared_for_core)
             {
                 hex_array[x/2].push_back(i);
-                num_spins_in_core++;
+                temp_core[coorm[i]][coorm[i+1]] = i;
+                counter_spins_in_core++;
                 //cout<<"hex["<<x/2<<"] = ";
                 //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                 {
                     //cout<<"hex["<<x/2<<"] = ";
                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                    break;
+                    ///break;
                 }
             }
             else
             {
                 //для границы
-                if(r<=((double)27/4)+0.0001)
+                if(r<=interaction_radius_squared_for_border)
                 {
                     bound_array[x/2].push_back(i);
-                    num_spins_on_bound++;
-                    if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                    temp_bound[coorm[i]][coorm[i+1]] = i;
+                    counter_spins_on_bound++;
+                    if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                     {
                         //cout<<"hex["<<x/2<<"] = ";
                         //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                        break;
+                        ///break;
                     }
                 }
             }
             
-            if(i==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
+            if(i==coorm.size()-2 && (counter_spins_in_core<total_num_of_spins_in_core || counter_spins_on_bound<total_num_of_spins_in_boundaries))
             {
                 for(unsigned int ii=0; ii<coorm.size(); ii+=2)
                 {
@@ -337,33 +361,35 @@ int main()
                     r=(hex_centers[x]-(max_X_of_centers+coorm[ii]))*(hex_centers[x]-(max_X_of_centers+coorm[ii]))+
                             (hex_centers[x+1]-coorm[ii+1])*(hex_centers[x+1]-coorm[ii+1]);
                     
-                    if(r<=((double)3/4)+0.0001)
+                    if(r<=interaction_radius_squared_for_core)
                     {
                         hex_array[x/2].push_back(ii);
-                        num_spins_in_core++;
-                        if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                        temp_core[max_X_of_centers+coorm[ii]][coorm[ii+1]] = ii;
+                        counter_spins_in_core++;
+                        if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                         {
                             //cout<<"hex["<<x/2<<"] = ";
                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                            break;
+                            ///break;
                         }
                     }
                     else
                     {
-                        if(r<=((double)27/4)+0.0001)
+                        if(r<=interaction_radius_squared_for_border)
                         {
                             bound_array[x/2].push_back(ii);
-                            num_spins_on_bound++;
-                            if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                            temp_bound[max_X_of_centers+coorm[ii]][coorm[ii+1]] = ii;
+                            counter_spins_on_bound++;
+                            if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                             {
                                 //cout<<"hex["<<x/2<<"] = ";
                                 //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                break;
+                                ///break;
                             }
                         }
                     }
                     
-                    if(ii==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
+                    if(ii==coorm.size()-2 && (counter_spins_in_core<total_num_of_spins_in_core || counter_spins_on_bound<total_num_of_spins_in_boundaries))
                     {
                         for(unsigned int iii=0; iii<coorm.size(); iii+=2)
                         {
@@ -371,33 +397,35 @@ int main()
                             r=(hex_centers[x]-coorm[iii])*(hex_centers[x]-coorm[iii])+
                                     (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iii+1]));
                             
-                            if(r<=((double)3/4)+0.0001)
+                            if(r<=interaction_radius_squared_for_core)
                             {
                                 hex_array[x/2].push_back(iii);
-                                num_spins_in_core++;
-                                if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                temp_core[coorm[iii]][max_Y_of_centers+min_Y_of_centers+coorm[iii+1]] = iii;
+                                counter_spins_in_core++;
+                                if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                 {
                                     //cout<<"hex["<<x/2<<"] = ";
                                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                    break;
+                                    ///break;
                                 }
                             }
                             else
                             {
-                                if(r<=((double)27/4)+0.0001)
+                                if(r<=interaction_radius_squared_for_border)
                                 {
                                     bound_array[x/2].push_back(iii);
-                                    num_spins_on_bound++;
-                                    if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                    temp_bound[coorm[iii]][max_Y_of_centers+min_Y_of_centers+coorm[iii+1]] = iii;
+                                    counter_spins_on_bound++;
+                                    if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                     {
                                         //cout<<"hex["<<x/2<<"] = ";
                                         //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                        break;
+                                        ///break;
                                     }
                                 }
                             }
                             
-                            if(iii==coorm.size()-2 && (num_spins_in_core<6 || num_spins_on_bound<24))
+                            if(iii==coorm.size()-2 && (counter_spins_in_core<total_num_of_spins_in_core || counter_spins_on_bound<total_num_of_spins_in_boundaries))
                             {
                                 for(unsigned int iiii=0; iiii<coorm.size(); iiii+=2)
                                 {
@@ -405,33 +433,35 @@ int main()
                                     r=(hex_centers[x]-(max_X_of_centers+coorm[iiii]))*(hex_centers[x]-(max_X_of_centers+coorm[iiii]))+
                                             (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]));
                                     
-                                    if(r<=((double)3/4)+0.0001)
+                                    if(r<=interaction_radius_squared_for_core)
                                     {
                                         hex_array[x/2].push_back(iiii);
-                                        num_spins_in_core++;
-                                        if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                        temp_core[max_X_of_centers+coorm[iiii]][max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]] = iiii;
+                                        counter_spins_in_core++;
+                                        if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                         {
                                             //cout<<"hex["<<x/2<<"] = ";
                                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                            break;
+                                            ///break;
                                         }
                                     }
                                     else
                                     {
-                                        if(r<=((double)27/4)+0.0001)
+                                        if(r<=interaction_radius_squared_for_border)
                                         {
                                             bound_array[x/2].push_back(iiii);
-                                            num_spins_on_bound++;
-                                            if(num_spins_in_core == 6 && num_spins_on_bound == 24)
+                                            temp_bound[max_X_of_centers+coorm[iiii]][max_Y_of_centers+min_Y_of_centers+coorm[iiii+1]] = iiii;
+                                            counter_spins_on_bound++;
+                                            if(counter_spins_in_core == total_num_of_spins_in_core && counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                             {
                                                 //cout<<"hex["<<x/2<<"] = ";
                                                 //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                break;
+                                                ///break;
                                             }
                                         }
                                     }
                                     
-                                    if(iiii==coorm.size()-2 && num_spins_on_bound<24)
+                                    if(iiii==coorm.size()-2 && counter_spins_on_bound<total_num_of_spins_in_boundaries)
                                     {
                                         for(unsigned int iiiii=0; iiiii<coorm.size(); iiiii+=2)
                                         {
@@ -439,39 +469,41 @@ int main()
                                             r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiii]))+
                                                     (hex_centers[x+1]-coorm[iiiii+1])*(hex_centers[x+1]-coorm[iiiii+1]);
                                             
-                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                            if(r>interaction_radius_squared_for_core && r<=interaction_radius_squared_for_border)
                                             {
                                                 bound_array[x/2].push_back(iiiii);
-                                                num_spins_on_bound++;
-                                                if(num_spins_on_bound == 24)
+                                                temp_bound[-max_X_of_centers+coorm[iiiii]][coorm[iiiii+1]] = iiiii;
+                                                counter_spins_on_bound++;
+                                                if(counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                                 {
                                                     //cout<<"hex["<<x/2<<"] = ";
                                                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                    break;
+                                                    ///break;
                                                 }
                                             }
                                             
-                                            if(iiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                            if(iiiii==coorm.size()-2 && counter_spins_on_bound<total_num_of_spins_in_boundaries)
                                             {
                                                 for(unsigned int iiiiii=0; iiiiii<coorm.size(); iiiiii+=2)
                                                 {
-                                                    //сдвигаем по Y
+                                                    //сдвигаем по -Y
                                                     r=(hex_centers[x]-coorm[iiiiii])*(hex_centers[x]-coorm[iiiiii])+
                                                             (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiii+1]));
                                                     
-                                                    if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                    if(r>interaction_radius_squared_for_core && r<=interaction_radius_squared_for_border)
                                                     {
                                                         bound_array[x/2].push_back(iiiiii);
-                                                        num_spins_on_bound++;
-                                                        if(num_spins_on_bound == 24)
+                                                        temp_bound[coorm[iiiiii]][-max_Y_of_centers-min_Y_of_centers+coorm[iiiiii+1]] = iiiiii;
+                                                        counter_spins_on_bound++;
+                                                        if(counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                                         {
                                                             //cout<<"hex["<<x/2<<"] = ";
                                                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                            break;
+                                                            ///break;
                                                         }
                                                     }
                                                     
-                                                    if(iiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                    if(iiiiii==coorm.size()-2 && counter_spins_on_bound<total_num_of_spins_in_boundaries)
                                                     {
                                                         for(unsigned int iiiiiii=0; iiiiiii<coorm.size(); iiiiiii+=2)
                                                         {
@@ -479,19 +511,20 @@ int main()
                                                             r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiii]))+
                                                                     (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiii+1]));
                                                             
-                                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                            if(r>interaction_radius_squared_for_core && r<=interaction_radius_squared_for_border)
                                                             {
                                                                 bound_array[x/2].push_back(iiiiiii);
-                                                                num_spins_on_bound++;
-                                                                if(num_spins_on_bound == 24)
+                                                                temp_bound[-max_X_of_centers+coorm[iiiiiii]][-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiii+1]] = iiiiiii;
+                                                                counter_spins_on_bound++;
+                                                                if(counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                                                 {
                                                                     //cout<<"hex["<<x/2<<"] = ";
                                                                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                                    break;
+                                                                    ///break;
                                                                 }
                                                             }
                                                             
-                                                            if(iiiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                            if(iiiiiii==coorm.size()-2 && counter_spins_on_bound<total_num_of_spins_in_boundaries)
                                                             {
                                                                 for(unsigned int iiiiiiii=0; iiiiiiii<coorm.size(); iiiiiiii+=2)
                                                                 {
@@ -499,19 +532,20 @@ int main()
                                                                     r=(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiiii]))*(hex_centers[x]-(-max_X_of_centers+coorm[iiiiiiii]))+
                                                                             (hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiiiiiii+1]))*(hex_centers[x+1]-(max_Y_of_centers+min_Y_of_centers+coorm[iiiiiiii+1]));
                                                                     
-                                                                    if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                                    if(r>interaction_radius_squared_for_core && r<=interaction_radius_squared_for_border)
                                                                     {
                                                                         bound_array[x/2].push_back(iiiiiiii);
-                                                                        num_spins_on_bound++;
-                                                                        if(num_spins_on_bound == 24)
+                                                                        temp_bound[-max_X_of_centers+coorm[iiiiiiii]][max_Y_of_centers+min_Y_of_centers+coorm[iiiiiiii+1]] = iiiiiiii;
+                                                                        counter_spins_on_bound++;
+                                                                        if(counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                                                         {
                                                                             //cout<<"hex["<<k<<"] = ";
                                                                             //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                                            break;
+                                                                            ///break;
                                                                         }
                                                                     }
                                                                     
-                                                                    if(iiiiiiii==coorm.size()-2 && num_spins_on_bound<24)
+                                                                    if(iiiiiiii==coorm.size()-2 && counter_spins_on_bound<total_num_of_spins_in_boundaries)
                                                                     {
                                                                         for(unsigned int iiiiiiiii=0; iiiiiiiii<coorm.size(); iiiiiiiii+=2)
                                                                         {
@@ -519,15 +553,16 @@ int main()
                                                                             r=(hex_centers[x]-(max_X_of_centers+coorm[iiiiiiiii]))*(hex_centers[x]-(max_X_of_centers+coorm[iiiiiiiii]))+
                                                                                     (hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiiiii+1]))*(hex_centers[x+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiiiii+1]));
                                                                             
-                                                                            if(r>((double)3/4)+0.0001 && r<=((double)27/4)+0.0001)
+                                                                            if(r>interaction_radius_squared_for_core && r<=interaction_radius_squared_for_border)
                                                                             {
                                                                                 bound_array[x/2].push_back(iiiiiiiii);
-                                                                                num_spins_on_bound++;
-                                                                                if(num_spins_on_bound == 24)
+                                                                                temp_bound[max_X_of_centers+coorm[iiiiiiiii]][-max_Y_of_centers-min_Y_of_centers+coorm[iiiiiiiii+1]] = iiiiiiiii;
+                                                                                counter_spins_on_bound++;
+                                                                                if(counter_spins_on_bound == total_num_of_spins_in_boundaries)
                                                                                 {
                                                                                     //cout<<"hex["<<k<<"] = ";
                                                                                     //cout<<"num_spins_in_core = "<<num_spins_in_core<<endl;
-                                                                                    break;
+                                                                                    ///break;
                                                                                 }
                                                                             }
                                                                         }
@@ -547,15 +582,65 @@ int main()
                 }
             }
         }
-        num_spins_in_core=0;
-        num_spins_on_bound=0;
+        counter_spins_in_core=0;
+        counter_spins_on_bound=0;
+        
+        //проверка размера
+        //cout<<"temp_core.size() = "<<temp_core.size()<<endl;
+        //cout<<"temp_bound.size() = "<<temp_bound.size()<<endl;
+        //cout<<"hex_array["<<x/2<<"].size() = "<<hex_array[x/2].size()<<endl;
+        
+        int k = 0;
+        for (auto it : temp_core)
+        {
+            for (auto it2 : it.second)
+            {
+                //cout<<"spin "<<it2.second/2<<": ["; //номер спина
+                //cout<<it.first<<", "; //координата X
+                //cout<<it2.first<<"]\n"; //координата Y
+                hex_array[x/2][k] = it2.second;
+                k++;
+            }
+        }
+        
+        //cout<<"\nboundary:\n";
+        k = 0;
+        for (auto it : temp_bound)
+        {
+            for (auto it2 : it.second)
+            {
+                //cout<<"spin "<<it2.second/2<<": ["; //номер спина
+                //cout<<it.first<<", "; //координата X
+                //cout<<it2.first<<"]\n"; //координата Y
+                bound_array[x/2][k] = it2.second;
+                k++;
+            }
+        }
+        
+        //очистка
+        temp_core.erase(temp_core.begin(),temp_core.end());
+        temp_bound.erase(temp_bound.begin(),temp_bound.end());
         
         //cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
         //cout<<hex_array[x/2].size()/2<<endl;
         //cout<<bound_array[x/2].size()/2<<endl;
         
+        //вывод номеров и координат спинов гексагона
+        //if(x/2==6)
+        /*
+        {
+            cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<","<<hex_centers[x+1]<<"] = ";
+            cout<<hex_array[x/2].size()<<endl;
+            for(unsigned int i=0; i<hex_array[x/2].size(); i++)
+            {
+                cout<<"spin in core: "<<i<<" ("<<hex_array[x/2][i]/2<<") "<<" ["<<coorm[hex_array[x/2][i]]<<", "<<coorm[hex_array[x/2][i]+1]<<"]\n";
+            }
+        }
+        system("pause");
+        //*/
+        
         //проверка на правильное количество спинов в каждом гексагоне
-        if(hex_array[x/2].size()!=6)
+        if(hex_array[x/2].size()!=total_num_of_spins_in_core)
         {
             cout<<endl<<"Wrong hex size!!!!!!!!!!!!!!!!!!!!!"<<endl;
             cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<", "<<hex_centers[x+1]<<"] = ";
@@ -563,7 +648,7 @@ int main()
         }
         
         //проверка на правильное количество спинов на границе каждого гексагона
-        if(bound_array[x/2].size()!=24)
+        if(bound_array[x/2].size()!=total_num_of_spins_in_boundaries)
         {
             cout<<endl<<"Wrong border size!!!!!!!!!!!!!!!!!!!!!"<<endl;
             cout<<"hex "<<x/2<<" ["<<hex_centers[x]<<", "<<hex_centers[x+1]<<"] = ";
@@ -577,18 +662,20 @@ int main()
     
     struct spin_struct
     {
-        unsigned int number;
+        unsigned int num;
         double x;
         double y;
+        double mx;
+        double my;
         
         //конструктор
-        spin_struct(unsigned int number, double x, double y){spin_struct::number = number; spin_struct::x = x; spin_struct::y = y; }
+        spin_struct(unsigned int num, double x, double y, double mx, double my){spin_struct::num = num; spin_struct::x = x; spin_struct::y = y; spin_struct::mx = mx; spin_struct::my = my; }
     };
 
     vector <vector <spin_struct> > neighbors(coorm.size()/2); //array of neighbors
-    int num_of_neighbors=0;
+    unsigned int counter_of_neighbors=0;
     
-    cout<<"\nneighbors\n";
+    cout<<"\nneighbors";
     //поиск соседей
     for(unsigned int i=0; i<coorm.size(); i+=2)
     {
@@ -597,19 +684,19 @@ int main()
             r=(coorm[i]-coorm[j])*(coorm[i]-coorm[j])+
                     (coorm[i+1]-coorm[j+1])*(coorm[i+1]-coorm[j+1]);
             
-            if(i!=j && r<=4*a+0.0001)
+            if(i!=j && r<=interaction_radius_squared_for_neighbors)
             {
-                neighbors[i/2].push_back(spin_struct(j,coorm[j],coorm[j+1]));
-                num_of_neighbors++;
-                if(num_of_neighbors == 14)
+                neighbors[i/2].push_back(spin_struct(j,coorm[j],coorm[j+1],mxmy[j],mxmy[j+1]));
+                counter_of_neighbors++;
+                if(counter_of_neighbors == total_num_of_neighbors)
                 {
-                    //cout<<"neighbors["<<i/2<<"] = ";
+                    //cout<<"\nneighbors["<<i/2<<"] = ";
                     //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                    break;
+                    ///break;
                 }
             }
             
-            if(j==coorm.size()-2 && num_of_neighbors<14)
+            if(j==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
             {
                 for(unsigned int jj=0; jj<coorm.size(); jj+=2)
                 {
@@ -617,19 +704,19 @@ int main()
                     r=(coorm[i]-(max_X_of_centers+coorm[jj]))*(coorm[i]-(max_X_of_centers+coorm[jj]))+
                             (coorm[i+1]-coorm[jj+1])*(coorm[i+1]-coorm[jj+1]);
                     
-                    if(i!=jj && r<=4*a+0.0001)
+                    if(i!=jj && r<=interaction_radius_squared_for_neighbors)
                     {
-                        neighbors[i/2].push_back(spin_struct(jj,max_X_of_centers+coorm[jj],coorm[jj+1]));
-                        num_of_neighbors++;
-                        if(num_of_neighbors == 14)
+                        neighbors[i/2].push_back(spin_struct(jj,max_X_of_centers+coorm[jj],coorm[jj+1],mxmy[jj],mxmy[jj+1]));
+                        counter_of_neighbors++;
+                        if(counter_of_neighbors == total_num_of_neighbors)
                         {
-                            //cout<<"neighbors["<<i/2<<"] = ";
+                            //cout<<"\nneighbors["<<i/2<<"] = ";
                             //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                            break;
+                            ///break;
                         }
                     }
                     
-                    if(jj==coorm.size()-2 && num_of_neighbors<14)
+                    if(jj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                     {
                         for(unsigned int jjj=0; jjj<coorm.size(); jjj+=2)
                         {
@@ -637,19 +724,19 @@ int main()
                             r=(coorm[i]-(-max_X_of_centers+coorm[jjj]))*(coorm[i]-(-max_X_of_centers+coorm[jjj]))+
                                     (coorm[i+1]-coorm[jjj+1])*(coorm[i+1]-coorm[jjj+1]);
                             
-                            if(i!=jjj && r<=4*a+0.0001)
+                            if(i!=jjj && r<=interaction_radius_squared_for_neighbors)
                             {
-                                neighbors[i/2].push_back(spin_struct(jjj, -max_X_of_centers+coorm[jjj], coorm[jjj+1]));
-                                num_of_neighbors++;
-                                if(num_of_neighbors == 14)
+                                neighbors[i/2].push_back(spin_struct(jjj, -max_X_of_centers+coorm[jjj], coorm[jjj+1], mxmy[jjj], mxmy[jjj+1]));
+                                counter_of_neighbors++;
+                                if(counter_of_neighbors == total_num_of_neighbors)
                                 {
-                                    //cout<<"neighbors["<<i/2<<"] = ";
+                                    //cout<<"\nneighbors["<<i/2<<"] = ";
                                     //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                    break;
+                                    ///break;
                                 }
                             }
                             
-                            if(jjj==coorm.size()-2 && num_of_neighbors<14)
+                            if(jjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                             {
                                 for(unsigned int jjjj=0; jjjj<coorm.size(); jjjj+=2)
                                 {
@@ -657,20 +744,20 @@ int main()
                                     r=(coorm[i]-coorm[jjjj])*(coorm[i]-coorm[jjjj])+
                                             (coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjj+1]))*(coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjj+1]));
                                     
-                                    if(i!=jjjj && r<=4*a+0.0001)
+                                    if(i!=jjjj && r<=interaction_radius_squared_for_neighbors)
                                     {
-                                        neighbors[i/2].push_back(spin_struct(jjjj, coorm[jjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjj+1]));
-                                        num_of_neighbors++;
-                                        if(num_of_neighbors == 14)
+                                        neighbors[i/2].push_back(spin_struct(jjjj, coorm[jjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjj+1], mxmy[jjjj], mxmy[jjjj+1]));
+                                        counter_of_neighbors++;
+                                        if(counter_of_neighbors == total_num_of_neighbors)
                                         {
-                                            //cout<<"neighbors["<<i/2<<"] = ";
+                                            //cout<<"\nneighbors["<<i/2<<"] = ";
                                             //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                            break;
+                                            ///break;
                                         }
                                     }
                                     
                                     
-                                    if(jjjj==coorm.size()-2 && num_of_neighbors<14)
+                                    if(jjjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                                     {
                                         for(unsigned int jjjjj=0; jjjjj<coorm.size(); jjjjj+=2)
                                         {
@@ -678,19 +765,19 @@ int main()
                                             r=(coorm[i]-coorm[jjjjj])*(coorm[i]-coorm[jjjjj])+
                                                     (coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjj+1]))*(coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjj+1]));
                                             
-                                            if(i!=jjjjj && r<=4*a+0.0001)
+                                            if(i!=jjjjj && r<=interaction_radius_squared_for_neighbors)
                                             {
-                                                neighbors[i/2].push_back(spin_struct(jjjjj, coorm[jjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjj+1]));
-                                                num_of_neighbors++;
-                                                if(num_of_neighbors == 14)
+                                                neighbors[i/2].push_back(spin_struct(jjjjj, coorm[jjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjj+1], mxmy[jjjjj], mxmy[jjjjj+1]));
+                                                counter_of_neighbors++;
+                                                if(counter_of_neighbors == total_num_of_neighbors)
                                                 {
-                                                    //cout<<"neighbors["<<i/2<<"] = ";
+                                                    //cout<<"\nneighbors["<<i/2<<"] = ";
                                                     //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                                    break;
+                                                    ///break;
                                                 }
                                             }
                                             
-                                            if(jjjjj==coorm.size()-2 && num_of_neighbors<14)
+                                            if(jjjjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                                             {
                                                 for(unsigned int jjjjjj=0; jjjjjj<coorm.size(); jjjjjj+=2)
                                                 {
@@ -698,19 +785,19 @@ int main()
                                                     r=(coorm[i]-(max_X_of_centers+coorm[jjjjjj]))*(coorm[i]-(max_X_of_centers+coorm[jjjjjj]))+
                                                             (coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjjjj+1]))*(coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjjjj+1]));
                                                     
-                                                    if(i!=jjjjjj && r<=4*a+0.0001)
+                                                    if(i!=jjjjjj && r<=interaction_radius_squared_for_neighbors)
                                                     {
-                                                        neighbors[i/2].push_back(spin_struct(jjjjjj, max_X_of_centers+coorm[jjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjj+1]));
-                                                        num_of_neighbors++;
-                                                        if(num_of_neighbors == 14)
+                                                        neighbors[i/2].push_back(spin_struct(jjjjjj, max_X_of_centers+coorm[jjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjj+1], mxmy[jjjjjj], mxmy[jjjjjj+1]));
+                                                        counter_of_neighbors++;
+                                                        if(counter_of_neighbors == total_num_of_neighbors)
                                                         {
-                                                            //cout<<"neighbors["<<i/2<<"] = ";
+                                                            //cout<<"\nneighbors["<<i/2<<"] = ";
                                                             //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                                            break;
+                                                            ///break;
                                                         }
                                                     }
                                                     
-                                                    if(jjjjjj==coorm.size()-2 && num_of_neighbors<14)
+                                                    if(jjjjjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                                                     {
                                                         for(unsigned int jjjjjjj=0; jjjjjjj<coorm.size(); jjjjjjj+=2)
                                                         {
@@ -718,19 +805,19 @@ int main()
                                                             r=(coorm[i]-(-max_X_of_centers+coorm[jjjjjjj]))*(coorm[i]-(-max_X_of_centers+coorm[jjjjjjj]))+
                                                                     (coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjj+1]))*(coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjj+1]));
                                                             
-                                                            if(i!=jjjjjjj && r<=4*a+0.0001)
+                                                            if(i!=jjjjjjj && r<=interaction_radius_squared_for_neighbors)
                                                             {
-                                                                neighbors[i/2].push_back(spin_struct(jjjjjjj, -max_X_of_centers+coorm[jjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjj+1]));
-                                                                num_of_neighbors++;
-                                                                if(num_of_neighbors == 14)
+                                                                neighbors[i/2].push_back(spin_struct(jjjjjjj, -max_X_of_centers+coorm[jjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjj+1], mxmy[jjjjjjj], mxmy[jjjjjjj+1]));
+                                                                counter_of_neighbors++;
+                                                                if(counter_of_neighbors == total_num_of_neighbors)
                                                                 {
-                                                                    //cout<<"neighbors["<<i/2<<"] = ";
+                                                                    //cout<<"\nneighbors["<<i/2<<"] = ";
                                                                     //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                                                    break;
+                                                                    ///break;
                                                                 }
                                                             }
                                                             
-                                                            if(jjjjjjj==coorm.size()-2 && num_of_neighbors<14)
+                                                            if(jjjjjjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                                                             {
                                                                 for(unsigned int jjjjjjjj=0; jjjjjjjj<coorm.size(); jjjjjjjj+=2)
                                                                 {
@@ -738,19 +825,19 @@ int main()
                                                                     r=(coorm[i]-(max_X_of_centers+coorm[jjjjjjjj]))*(coorm[i]-(max_X_of_centers+coorm[jjjjjjjj]))+
                                                                             (coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjjj+1]))*(coorm[i+1]-(-max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjjj+1]));
                                                                     
-                                                                    if(i!=jjjjjjjj && r<=4*a+0.0001)
+                                                                    if(i!=jjjjjjjj && r<=interaction_radius_squared_for_neighbors)
                                                                     {
-                                                                        neighbors[i/2].push_back(spin_struct(jjjjjjjj, max_X_of_centers+coorm[jjjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjjj+1]));
-                                                                        num_of_neighbors++;
-                                                                        if(num_of_neighbors == 14)
+                                                                        neighbors[i/2].push_back(spin_struct(jjjjjjjj, max_X_of_centers+coorm[jjjjjjjj], -max_Y_of_centers-min_Y_of_centers+coorm[jjjjjjjj+1], mxmy[jjjjjjjj], mxmy[jjjjjjjj+1]));
+                                                                        counter_of_neighbors++;
+                                                                        if(counter_of_neighbors == total_num_of_neighbors)
                                                                         {
-                                                                            //cout<<"neighbors["<<i/2<<"] = ";
+                                                                            //cout<<"\nneighbors["<<i/2<<"] = ";
                                                                             //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                                                            break;
+                                                                            ///break;
                                                                         }
                                                                     }
                                                                     
-                                                                    if(jjjjjjjj==coorm.size()-2 && num_of_neighbors<14)
+                                                                    if(jjjjjjjj==coorm.size()-2 && counter_of_neighbors<total_num_of_neighbors)
                                                                     {
                                                                         for(unsigned int jjjjjjjjj=0; jjjjjjjjj<coorm.size(); jjjjjjjjj+=2)
                                                                         {
@@ -758,15 +845,15 @@ int main()
                                                                             r=(coorm[i]-(-max_X_of_centers+coorm[jjjjjjjjj]))*(coorm[i]-(-max_X_of_centers+coorm[jjjjjjjjj]))+
                                                                                     (coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjjjjjjj+1]))*(coorm[i+1]-(max_Y_of_centers+min_Y_of_centers+coorm[jjjjjjjjj+1]));
                                                                             
-                                                                            if(i!=jjjjjjjjj && r<=4*a+0.0001)
+                                                                            if(i!=jjjjjjjjj && r<=interaction_radius_squared_for_neighbors)
                                                                             {
-                                                                                neighbors[i/2].push_back(spin_struct(jjjjjjjjj, -max_X_of_centers+coorm[jjjjjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjjjjj+1]));
-                                                                                num_of_neighbors++;
-                                                                                if(num_of_neighbors == 14)
+                                                                                neighbors[i/2].push_back(spin_struct(jjjjjjjjj, -max_X_of_centers+coorm[jjjjjjjjj], max_Y_of_centers+min_Y_of_centers+coorm[jjjjjjjjj+1], mxmy[jjjjjjjjj], mxmy[jjjjjjjjj+1]));
+                                                                                counter_of_neighbors++;
+                                                                                if(counter_of_neighbors == total_num_of_neighbors)
                                                                                 {
-                                                                                    //cout<<"neighbors["<<i/2<<"] = ";
+                                                                                    //cout<<"\nneighbors["<<i/2<<"] = ";
                                                                                     //cout<<"num_of_neighbors = "<<num_of_neighbors<<endl;
-                                                                                    break;
+                                                                                    ///break;
                                                                                 }
                                                                             }
                                                                         }
@@ -787,12 +874,12 @@ int main()
             }
         }
         
-        num_of_neighbors=0;
+        counter_of_neighbors=0;
         
-        //cout << i/2 << ": " << neighbors[i/2].size()/2 << endl;
+        //cout << i/2 << ": " << neighbors[i/2].size() << endl;
         
         //проверка на правильное количество соседей
-        if(neighbors[i/2].size()!=14)
+        if(neighbors[i/2].size()!=total_num_of_neighbors)
         {
             cout<<endl<<"Wrong number of neighbors!!!!!!!!!!!!!!!!!!!!!"<<endl;
             cout<<"spin "<<i/2<<" ["<<coorm[i]<<", "<<coorm[i+1]<<"] = ";
@@ -800,28 +887,410 @@ int main()
         }
     }
     
+    cout<<" OK!\n";
+    
     //проверяем спин на правильность соседей
     /*
-    cout<<"spin "<<47<<" ["<<coorm[47*2]<<", "<<coorm[47*2+1]<<"] = ";
-    cout<<neighbors[47].size()<<" neighbors"<<endl<<endl;
-    for(unsigned int i=0; i<neighbors[47].size(); ++i)
+    int s=38;
+    cout<<"spin "<<s<<" ["<<coorm[s*2]<<", "<<coorm[s*2+1]<<"] = ";
+    cout<<neighbors[s].size()<<" neighbors"<<endl<<endl;
+    for(unsigned int i=0; i<neighbors[s].size(); ++i)
     {
         //выводим номера соседних спинов
-        cout<<i<<": "<< neighbors[47][i].number/2;
+        cout<<i<<": "<< neighbors[s][i].number/2;
         //выводим координаты соседних спинов
-        cout<<" ["<<neighbors[47][i].x<<", "<<neighbors[47][i].y<<"]";
-        cout<<" (["<<coorm[neighbors[47][i].number]<<", "<<coorm[neighbors[47][i].number+1]<<"])\n";
+        cout<<" ["<<neighbors[s][i].x<<", "<<neighbors[s][i].y<<"]";
+        cout<<" (["<<coorm[neighbors[s][i].number]<<", "<<coorm[neighbors[s][i].number+1]<<"])\n";
     }
+    system("pause");
     //*/
+    
+    
+    //структура номер, координаты, магнитные моменты спина
+    struct num_xy_MxMy_struct{
+        unsigned int num;
+        double x;
+        double y;
+        double mx;
+        double my;
+    };
+    
+    
+    //
+    //сохраняем отдельно блок для перебора, за образец берем блок с центром #6
+    vector <num_xy_MxMy_struct> sample_core(total_num_of_spins_in_core);
+    vector <num_xy_MxMy_struct> sample_bound(total_num_of_spins_in_boundaries);
+    
+    //cout<<"core #6: \n";
+    for(unsigned int i=0; i<hex_array[6].size(); ++i)
+    {
+        sample_core[i].num = hex_array[6][i];
+        sample_core[i].x = coorm[sample_core[i].num];
+        sample_core[i].y = coorm[sample_core[i].num+1];
+        sample_core[i].mx = mxmy[sample_core[i].num];
+        sample_core[i].my = mxmy[sample_core[i].num+1];
+        
+        //cout<<sample_core[i].num/2<<", ";
+        //cout<<"# "<<sample_core[i].num/2<<endl;
+        //cout<<"coord: "<<sample_core[i].x<<", "<<sample_core[i].y<<endl;
+        //cout<<"mm: "<<sample_core[i].mx<<", "<<sample_core[i].my<<endl;
+    }
+    
+    //cout<<endl;
+    
+    //cout<<"bound #6: \n";
+    for(unsigned int i=0; i<bound_array[6].size(); ++i)
+    {
+        sample_bound[i].num = bound_array[6][i];
+        sample_bound[i].x = coorm[sample_bound[i].num];
+        sample_bound[i].y = coorm[sample_bound[i].num+1];
+        sample_bound[i].mx = mxmy[sample_bound[i].num];
+        sample_bound[i].my = mxmy[sample_bound[i].num+1];
+        
+        //cout<<sample_bound[i].num/2<<", ";
+        //cout<<"# "<<sample_bound[i].num/2<<endl;
+        //cout<<"coord: "<<sample_bound[i].x<<", "<<sample_bound[i].y<<endl;
+        //cout<<"mm: "<<sample_bound[i].mx<<", "<<sample_bound[i].my<<endl;
+    }
+    
+    cout<<endl;
+    
+    //system("pause");
+    //
+    
+    
+    /** перебор всех конфигураций границ и блока, сохранение E и M в массив --->>>> */
+    
+    unsigned int states_amount_of_core = 1<<total_num_of_spins_in_core; //количество конфигураций ядра
+    unsigned int boundaries_amount = 1<<total_num_of_spins_in_boundaries; //количество вариантов границ
+    
+    vector <double> Emin_array (boundaries_amount); //минимальные значания энергий для каждой границы
+    
+    //структура хранит энергию с учетом соседей, намагниченность по осям и конфигурации
+    struct EM_state_struct{
+        double E;
+        double Mx;
+        double My;
+        vector <int> state_array;
+        
+        //конструктор
+        EM_state_struct(double E, double Mx, double My){EM_state_struct::E = E; EM_state_struct::Mx = Mx; EM_state_struct::My = My;}
+    };
+    
+    //структура хранит энергию с учетом соседей и намагниченность по осям
+    struct EM_struct{
+        double E;
+        double Mx;
+        double My;
+    };
+    
+    //
+    //массив границ, энергий, намагниченности и соответствующих состояний
+    //boundaries_EM_core[boundaries_amount][num_of_unique_EMxMy].{E,Mx,My,state_array[]}
+    vector < vector <EM_state_struct> > boundaries_EM_core (boundaries_amount); 
+    
+    //массив границ, состояний и их энергий и намагниченности
+    //boundaries_core_EM[boundaries_amount][states_amount_of_core].{E,Mx,My}
+    vector < vector <EM_struct> > boundaries_core_EM (boundaries_amount, vector <EM_struct> (states_amount_of_core)); 
+    
+    vector < vector <int> > core_array (states_amount_of_core, vector <int> (total_num_of_spins_in_core)); //хранит +1 и -1
+    vector <int> boundaries_array (total_num_of_spins_in_boundaries); //хранит +1 и -1
+    
+    double Mx, Mx_1, Mx_2;
+    double My, My_1, My_2;
+    double E_block_tot = 0; //энергия всего блока (ядро + граница)
+    
+    unsigned int count=0;
+    
+    //перебор конфигураций ядра побитовым сдвигом
+    for(unsigned int state_num=0; state_num<states_amount_of_core; ++state_num)
+    {
+        ///cout << "State: " << state_num << " ( ";
+        count=0;
+        
+        for(int spin_num_in_core=(total_num_of_spins_in_core-1); spin_num_in_core>=0; --spin_num_in_core)
+        {
+            if(state_num&(1<<spin_num_in_core))
+                core_array[state_num][count]=1;
+            else
+                core_array[state_num][count]=-1;
+            
+            ///cout << core_array[state_num][count] << " "; //вывод конфигурации на экран
+            count++;
+        }
+        ///cout<<")"<<endl;
+    }
+    
+    unsigned int num_of_unique_EM = 0;
+    
+    
+    double X, Y;
+    double mx_i, mx_j, my_i, my_j;
+    
+    //перебор границ
+    for(unsigned int boundary_num=0; boundary_num<boundaries_amount; ++boundary_num)
+    {
+        Mx_1=0; //проверить подсчет намагниченности!!!!!!!!!!!!!!!
+        My_1=0; //проверить подсчет намагниченности!!!!!!!!!!!!!!!
+        count=0;
+        
+        //перебор границ побитовым сдвигом
+        ///cout << "\nBoundary: " << boundary_num << "( ";
+        for(int spin_num_in_boundary=(total_num_of_spins_in_boundaries-1); spin_num_in_boundary>=0; --spin_num_in_boundary)
+        {   
+            if(boundary_num&(1<<spin_num_in_boundary)) 
+                boundaries_array[count]=1;
+            else 
+                boundaries_array[count]=-1;
+            
+            ///cout << boundaries_array [count] << " "; //вывод границы на экран
+            
+            //Mx_1+=boundaries_array[count] * sample_bound[count].mx; //проверить!!!!!!!!!!!!
+            //My_1+=boundaries_array[count] * sample_bound[count].my; //проверить!!!!!!!!!!!!
+            
+            //заменяем магнитные моменты на границе
+            mxmy[sample_bound[count].num]=boundaries_array[count] * sample_bound[count].mx;
+            Mx_1+=mxmy[sample_bound[count].num];
+            mxmy[sample_bound[count].num+1]=boundaries_array[count] * sample_bound[count].my;
+            My_1+=mxmy[sample_bound[count].num+1];
+            
+            count++;
+        }
+        ///cout<<")"<<endl;
+        
+        ///cout<<"My_1 = "<<My_1<<endl;
+        
+        //перебор состояний в рамках границ и подсчет энергии и намагниченности
+        for(unsigned int state_num=0; state_num<states_amount_of_core; ++state_num)
+        {
+            Mx_2=0;
+            My_2=0;
+            E_block_tot = 0;
+            
+            //заменяем магнитные моменты в ядре
+            for(unsigned int spin_num_in_core=0; spin_num_in_core<total_num_of_spins_in_core; ++spin_num_in_core)
+            {
+               mxmy[sample_core[spin_num_in_core].num]=sample_core[spin_num_in_core].mx * core_array[state_num][spin_num_in_core];
+               mxmy[sample_core[spin_num_in_core].num+1]=sample_core[spin_num_in_core].my * core_array[state_num][spin_num_in_core];
+            }
+            
+            //подсчет энергии и намагниченности в блоке
+            ///cout << "State: " << state_num << " ( ";
+            for(unsigned int spin_num_in_core=0; spin_num_in_core<total_num_of_spins_in_core; ++spin_num_in_core)
+            {
+                ///cout << core_array[state_num][spin_num_in_core] << " "; //вывод конфигурации на экран
+                
+                //cout<<"spin_num_in_core = "<<spin_num_in_core<<": "<<sample_core[spin_num_in_core].num/2<<endl;
+                
+                //mx_i = sample_core[spin_num_in_core].mx * core_array[state_num][spin_num_in_core];
+                //my_i = sample_core[spin_num_in_core].my * core_array[state_num][spin_num_in_core];
+                mx_i = mxmy[sample_core[spin_num_in_core].num];
+                my_i = mxmy[sample_core[spin_num_in_core].num+1];
+                
+                ///cout<<"s"<<sample_core[spin_num_in_core].num/2<<"  mx_i = "<<mx_i<<", my_i = "<<my_i<<endl;
+                ///system("pause");
+                
+                for(unsigned int neigh=0; neigh<neighbors[sample_core[spin_num_in_core].num/2].size(); ++neigh)
+                {
+                    //cout<<neighbors[sample_core[spin_num_in_core].num/2][neigh].number/2<<", ";
+                    
+                    mx_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num];//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    my_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num+1];
+                    
+                    ///cout<<"s"<<neighbors[sample_core[spin_num_in_core].num/2][neigh].num/2<<"  mx_j = "<<mx_j<<", my_j = "<<my_j<<endl;
+                    
+                    //энергия ядра с учетом границ 
+                    //написать формулу расчета энергии!!!!!!!!!!!!!!
+                    X=(sample_core[spin_num_in_core].x-neighbors[sample_core[spin_num_in_core].num/2][neigh].x);
+                    Y=(sample_core[spin_num_in_core].y-neighbors[sample_core[spin_num_in_core].num/2][neigh].y);
+                    
+                    E_block_tot += (mx_i*mx_j + my_i*my_j)/
+                            sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
+                            3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
+                            sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+                    
+                }
+                
+                //намагниченность ядра
+                Mx_2 += core_array[state_num][spin_num_in_core] * sample_core[spin_num_in_core].mx; //проверить!!!!!!!!
+                My_2 += core_array[state_num][spin_num_in_core] * sample_core[spin_num_in_core].my; //проверить!!!!!!!!
+            }
+            ///cout<<")"<<endl;
+            ///system("pause");
+            
+            //намагниченность блока
+            Mx = Mx_1+Mx_2; //проверить намагниченность!!!!!!!!!!!!
+            My = My_1+My_2; //проверить намагниченность!!!!!!!!!!!!
+            
+            //cout<<"My_2 = "<<My_2<<endl;
+            
+            if(fabs(E_block_tot)<1e-13) E_block_tot = 0; //!заменяем на 0 очень маленькую энергию!!!!!
+            
+            //cout<<"E_block_tot = "<<E_block_tot<<", Mx= "<<Mx<<", My= "<<My<<endl;
+            
+            ///M и E блока посчитано, далее заполняем массив с учетом вырождений
+            
+            //system("pause");
+            
+            if(state_num == 0)
+            {
+                //ищем минимальную энергию для границы
+                //запоминаем первую энергию
+                Emin_array[boundary_num]=E_block_tot;
+                
+                boundaries_EM_core[boundary_num].push_back(EM_state_struct(E_block_tot,Mx,My));
+                boundaries_EM_core[boundary_num][0].state_array.push_back(0);
+                
+                //заполняем массив границ и соответствующие блоки
+                boundaries_core_EM[boundary_num][state_num].E = E_block_tot;
+                boundaries_core_EM[boundary_num][state_num].Mx = Mx;
+                boundaries_core_EM[boundary_num][state_num].My = My;
+                
+                
+                //cout<<"E_block_tot = "<<E_block_tot<<", Mx= "<<Mx<<", My= "<<My<<endl;
+                //cout<<"E= "<<boundaries_EM_core[boundary_num][boundaries_EM_core[boundary_num].size()-1].E<<endl;
+                //system("pause");
+            }
+            else
+            {
+                //ищем минимальную энергию для границы
+                if(Emin_array[boundary_num] > E_block_tot)
+                    Emin_array[boundary_num] = E_block_tot;
+                
+                //заполняем массив границ и соответствующие блоки
+                boundaries_core_EM[boundary_num][state_num].E = E_block_tot;
+                boundaries_core_EM[boundary_num][state_num].Mx = Mx;
+                boundaries_core_EM[boundary_num][state_num].My = My;
+                
+                for(unsigned int ii_4=0; ii_4<boundaries_EM_core[boundary_num].size(); ++ii_4)
+                {
+                    //cout<<"qq1"<<endl;
+                    //cout<<"E_block_tot = "<<E_block_tot<<", Mx= "<<Mx<<", My= "<<My<<endl;
+                    
+                    //проверить!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    //if(boundaries_EM_core[boundary_num][ii_4].E == E_block_tot && boundaries_EM_core[boundary_num][ii_4].Mx == Mx && boundaries_EM_core[boundary_num][ii_4].My == My)
+                    if(is_equal(boundaries_EM_core[boundary_num][ii_4].E, E_block_tot) && is_equal(boundaries_EM_core[boundary_num][ii_4].Mx, Mx) && is_equal(boundaries_EM_core[boundary_num][ii_4].My, My))
+                    {
+                        //cout<<"qq2"<<endl;
+                        boundaries_EM_core[boundary_num][ii_4].state_array.push_back(state_num);
+                        //cout<<"E_block_tot = "<<E_block_tot<<", Mx= "<<Mx<<", My= "<<My<<endl;
+                        //cout << "E1= " <<boundaries_EM_core[boundary_num][boundaries_EM_core[boundary_num].size()-1].E<<endl;
+                        //system("pause");
+                        break;
+                    }
+                    else if(ii_4 == boundaries_EM_core[boundary_num].size()-1)
+                    {
+                        //cout<<"qq3"<<endl;
+                        boundaries_EM_core[boundary_num].push_back(EM_state_struct(E_block_tot,Mx,My));
+                        boundaries_EM_core[boundary_num][ii_4+1].state_array.push_back(state_num);
+                        ii_4++;
+                        //cout<<"E_block_tot = "<<E_block_tot<<", Mx= "<<Mx<<", My= "<<My<<endl;
+                        //cout<<"E2= "<<boundaries_EM_core[boundary_num][boundaries_EM_core[boundary_num].size()-1].E<<endl;
+                        //system("pause");
+                    }
+                    //system("pause");
+                    ///cout << "Mx = " << states_array[ii][ii_4].Mx << endl;
+                    ///cout << "My = " << states_array[ii][ii_4].My << endl;
+                    ///cout << "E = " << states_array[ii][ii_4].E << endl;
+                }
+            }
+            
+            ///system("pause");
+            //здесь заканчивается перебор состояний в рамках границ
+        }
+        
+        ///cout<<"Emin_array[boundary_num] = "<<Emin_array[boundary_num]<<endl;
+        
+        cout << "Number of unique E&Mx&My = " << boundaries_EM_core[boundary_num].size() << endl;
+        num_of_unique_EM+=boundaries_EM_core[boundary_num].size();
+        
+        //*
+        //вывод E и M с учетом кратности вырождения
+        for(unsigned int ii=0; ii<boundaries_EM_core[boundary_num].size(); ++ii){
+            cout<<"________\n";
+            cout<<"E = "<<boundaries_EM_core[boundary_num][ii].E;
+            cout<<", Mx = "<<boundaries_EM_core[boundary_num][ii].Mx;
+            cout<<", My = "<<boundaries_EM_core[boundary_num][ii].My<<endl;
+            cout<<"States: { ";
+            for(unsigned int jj=0; jj<boundaries_EM_core[boundary_num][ii].state_array.size(); ++jj){
+               if(jj<boundaries_EM_core[boundary_num][ii].state_array.size()-1)
+                  cout<<boundaries_EM_core[boundary_num][ii].state_array[jj]<<", ";
+               else
+                  cout<<boundaries_EM_core[boundary_num][ii].state_array[jj]<<" ";
+            }
+            cout<<"}";
+            cout<<endl;
+        }
+        //*/
+        
+        //cout<<"pause 2\n";
+        system("pause");
+        
+        ///system("pause");
+        //здесь заканчивается перебор границ
+    }
+    
+    ///cout << "Number of boundaries = " << boundaries_EM_core.size() << endl;
+    //cout << "Number of states with unique E&M = " << boundaries_EM_core[0][0].state_array.size() << endl;
+    //cout << "Mx = " << boundaries_EM_core[0][0].Mx << endl;
+    //cout << "My = " << boundaries_EM_core[0][0].My << endl;
+    //cout << "E = " << boundaries_EM_core[0][0].E << endl;
+    ///cout << "The number of all pairs EM = "<<boundaries_amount*states_amount<<endl;
+    ///cout << "The number of unique pairs EM = "<<num_of_unique_EM<<endl;
+    
+    ///system("pause");
+    
+    
+    /** 
+     * на выходе получаем массив boundaries_EM_core[][].{E,Mx,My,state_array[]}, 
+     * который хранит все конфигурации границ, структуру уникальных значений E,Mx,My, и соответствующие им конфигурации блоков
+     */
+    /** <<<<----- здесь заканчивается перебор всех конфигураций границ и блока ----- */
+    
+    
+    
+    
+    
+    /** --------------- подставляем блок в систему --------------->>>> */
+    
+    
+    //system("pause");
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     //расчет энергии
     
+    double e=0;
+    
+    for(unsigned int i=0; i<coorm.size(); i+=2)
+    {
+        for(unsigned int j=0; j<neighbors.size(); ++j)
+        {
+            e+=1;
+        }
+    }
+    
+    
+    
     
     
     //system("pause");
-    
     
     cout << "\nThe End\n";
     return 0;
