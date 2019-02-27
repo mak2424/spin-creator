@@ -17,17 +17,18 @@ bool is_equal(double a, double b) { return fabs(a-b) <= DBL_EPSILON * fmax(fabs(
 #define NumMC 30000 //* количество спинов, перенести!!!!!!!!!!!!!!!!!!!!
 
 #define Tmin 0.0001
-#define Tmax 4.01
-float Tstep = 0.1;
+#define Tmax 10.01
+float Tstep = 0.01;
 
 double C1=0;
 
 
 int main()
 {
+   srand(5);
    default_random_engine generator; //тип генератора случайных чисел
    
-   ofstream foutc("coord.dat"); //коордтнаты точек
+   ofstream foutc("coord.dat"); //координаты точек
    ofstream fouts("spins.dat"); //магнитные моменты
    ofstream fout_centers("centers.dat"); //центры гексагонов
    
@@ -317,10 +318,12 @@ int main()
    map <double,map <double,unsigned int>> temp_core;
    map <double,map <double,unsigned int>> temp_bound;
    
-   cout<<"Number of hexagons = " << hex_array.size() <<endl;
+   cout<<"Number of hexagons = " << hex_array.size() <<endl<<endl;
    
    unsigned int counter_spins_in_core=0;
    unsigned int counter_spins_on_bound=0;
+   
+   cout<<"determining the cores and borders...\n";
    
    for(unsigned int x=0; x<hex_centers.size(); x+=2)
    {
@@ -669,6 +672,8 @@ int main()
    }
    
    
+   cout << "searching neighbors...\n";
+   
    struct spin_struct
    {
       unsigned int num;
@@ -915,6 +920,8 @@ int main()
     //*/
    
    
+   cout<<"sample calculation...\n";
+   
    //структура номер, координаты, магнитные моменты спина
    struct num_xy_MxMy_struct{
       unsigned int num;
@@ -1038,6 +1045,8 @@ int main()
    
    ///int kk=0;
    
+   bool flag=0;
+   
    //перебор границ
    for(unsigned int boundary_num=0; boundary_num<boundaries_amount; ++boundary_num)
    {
@@ -1106,27 +1115,36 @@ int main()
             for(unsigned int neigh=0; neigh<neighbors[sample_core[spin_num_in_core].num/2].size(); ++neigh)
             {
                //cout<<neighbors[sample_core[spin_num_in_core].num/2][neigh].number/2<<", ";
-               
-               mx_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num];//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               my_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num+1];
-               
-               ///cout<<"s"<<neighbors[sample_core[spin_num_in_core].num/2][neigh].num/2<<"  mx_j = "<<mx_j<<", my_j = "<<my_j<<endl;
-               
-               //энергия ядра с учетом границ 
-               //написать формулу расчета энергии!!!!!!!!!!!!!!
-               X=(sample_core[spin_num_in_core].x-neighbors[sample_core[spin_num_in_core].num/2][neigh].x);
-               Y=(sample_core[spin_num_in_core].y-neighbors[sample_core[spin_num_in_core].num/2][neigh].y);
-               
-               E_block_tot += (mx_i*mx_j + my_i*my_j)/
-                     sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
-                     3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
-                     sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+               flag = 0;
+               for(unsigned int i=0; i<spin_num_in_core; i++)
+               {
+                  if (neighbors[sample_core[spin_num_in_core].num/2][neigh].num == sample_core[i].num)
+                     flag=1;
+               }
+               if(flag==0)
+               {
+                  mx_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num];//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  my_j = mxmy[neighbors[sample_core[spin_num_in_core].num/2][neigh].num+1];
+                  
+                  ///cout<<"s"<<neighbors[sample_core[spin_num_in_core].num/2][neigh].num/2<<"  mx_j = "<<mx_j<<", my_j = "<<my_j<<endl;
+                  
+                  //энергия ядра с учетом границ 
+                  X=(sample_core[spin_num_in_core].x-neighbors[sample_core[spin_num_in_core].num/2][neigh].x);
+                  Y=(sample_core[spin_num_in_core].y-neighbors[sample_core[spin_num_in_core].num/2][neigh].y);
+                  
+                  E_block_tot += (mx_i*mx_j + my_i*my_j)/
+                        sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
+                        3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
+                        sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+               }
             }
             
             //намагниченность ядра
-            Mx_2 += core_array[state_num][spin_num_in_core] * sample_core[spin_num_in_core].mx; //проверить!!!!!!!!
-            My_2 += core_array[state_num][spin_num_in_core] * sample_core[spin_num_in_core].my; //проверить!!!!!!!!
+            Mx_2 += sample_core[spin_num_in_core].mx * core_array[state_num][spin_num_in_core]; //проверить!!!!!!!!
+            My_2 += sample_core[spin_num_in_core].my * core_array[state_num][spin_num_in_core]; //проверить!!!!!!!!
          }
+         
+         //cout<<"E_block_tot = "<<E_block_tot<<endl;
          ///cout<<")"<<endl;
          ///system("pause");
          
@@ -1268,7 +1286,7 @@ int main()
    ///cout << "The number of all pairs EM = "<<boundaries_amount*states_amount<<endl;
    ///cout << "The number of unique pairs EM = "<<num_of_unique_EM<<endl;
    
-   system("pause");
+   ///system("pause");
    
    
    /** 
@@ -1294,7 +1312,6 @@ int main()
    
    
    unsigned int set_of_states, total_set_of_states=0;
-   bool flag=0;
    
    uniform_real_distribution<double> distribution_real(0,1); //вещественное равномерное распределение
    
@@ -1326,18 +1343,23 @@ int main()
       mx_i = mxmy[i];
       my_i = mxmy[i+1];
       
-      for(unsigned int j=i+2; j<coorm.size(); j+=2)
+      for(unsigned int neigh=0; neigh<neighbors[i/2].size(); ++neigh)
+      //for(unsigned int j=i+2; j<coorm.size(); j+=2)
       {
-         mx_j = mxmy[j];
-         my_j = mxmy[j+1];
-         
-         X = coorm[i]-coorm[j];
-         Y = coorm[i+1]-coorm[j+1];
-         
-         E_sys+= (mx_i*mx_j + my_i*my_j)/
-               sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
-               3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
-               sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+         //cout<<neighbors[i/2][neigh].number/2<<", ";
+         if(neighbors[i/2][neigh].num > i)
+         {
+            mx_j = mxmy[neighbors[i/2][neigh].num];
+            my_j = mxmy[neighbors[i/2][neigh].num+1];
+            
+            X = coorm[i]-neighbors[i/2][neigh].x;
+            Y = coorm[i+1]-neighbors[i/2][neigh].y;
+            
+            E_sys+= (mx_i*mx_j + my_i*my_j)/
+                  sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
+                  3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
+                  sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+         }
       }
       
       Mx_sys += mx_i;
@@ -1345,12 +1367,16 @@ int main()
    }
    
    cout<<"E_sys = "<<E_sys<<", Mx_sys = "<<Mx_sys<<", My_sys = "<<My_sys<<endl;
-   system("pause");
+   ///system("pause");
    
    
    //проход блока по системе
    for(float T = Tmin; T<Tmax; T+=Tstep) //цикл по температуре
    {
+      if(T<0.2) Tstep=0.001;
+      else 
+         if(T<1.1) Tstep=0.01;
+      else Tstep=0.1;
       ///if(T>2.1 && T<2.5) Tstep=0.01;
       ///else Tstep=0.1;
       cout << "T = " << T << endl << "----------"<<endl;
@@ -1408,9 +1434,11 @@ int main()
          ///cout<<"E0 = "<<boundaries_core_EM[boundary_dec][core_dec].E<<", Mx0 = "<<boundaries_core_EM[boundary_dec][core_dec].Mx<<", My0 = "<<boundaries_core_EM[boundary_dec][core_dec].My<<endl;
          ///cout << "Emin = " << Emin_array[boundary_dec] << endl;
          
-         E_sys-= boundaries_core_EM[boundary_dec][core_dec].E;
-         Mx_sys-= boundaries_core_EM[boundary_dec][core_dec].Mx;
-         My_sys-= boundaries_core_EM[boundary_dec][core_dec].My;
+         E_sys  -= boundaries_core_EM[boundary_dec][core_dec].E;
+         Mx_sys -= boundaries_core_EM[boundary_dec][core_dec].Mx;
+         My_sys -= boundaries_core_EM[boundary_dec][core_dec].My;
+         ///cout << "boundaries_core_EM[boundary_dec][core_dec].E = " << boundaries_core_EM[boundary_dec][core_dec].E << endl;
+         ///cout << "E_sys before = " << E_sys << endl;
          
          Z = 0; //статсумма
          E_aver_i = 0;
@@ -1436,14 +1464,14 @@ int main()
          ///cout << "Z = " << Z << endl;
          
          r0_1 = distribution_real(generator);
-         cout<<"r0_1 = "<<r0_1<<endl;
+         ///cout<<"r0_1 = "<<r0_1<<endl;
          
          //перебираем интервалы вероятностей
          interval=0;
          flag=0;
          ///double sum=0;
          
-         cout<<"E_aver_i = "<<E_aver_i<<endl;
+         //cout<<"E_aver_i = "<<E_aver_i<<endl;
          
          //считаем вероятности
          for(set_of_states=0; set_of_states<num_of_unique_EM_in_boundary; ++set_of_states)
@@ -1471,8 +1499,7 @@ int main()
                flag = 1;
             }
          }
-         cout<<"E_aver_i = "<<E_aver_i<<endl;
-         system("pause");
+         ///cout<<"E_aver_i = "<<E_aver_i<<endl;
          
          ///cout<<"P_sum = " << sum << endl;
          
@@ -1497,7 +1524,12 @@ int main()
          My_sys += boundaries_EM_core[boundary_dec][total_set_of_states].My;
          E_sys += boundaries_EM_core[boundary_dec][total_set_of_states].E;
          
-         cout<<"E_sys = "<<E_sys<<endl;
+         ///cout << "boundaries_EM_core[boundary_dec][total_set_of_states].E = " << boundaries_EM_core[boundary_dec][total_set_of_states].E << endl;
+         ///cout << "E_sys after = " << E_sys << endl<<endl;
+         
+         ///system("pause");
+         
+         //cout<<"E_sys = "<<E_sys<<endl;
          
          //выбираем случайную конфигурацию с одинаковыми параметрами
          rand_state = rand() % boundaries_EM_core[boundary_dec][total_set_of_states].state_array.size();
@@ -1548,8 +1580,8 @@ int main()
       double C = ((E2_aver - E_aver*E_aver)/(T*T))/(double)(coorm.size()/2);
       cout << "C = " << C << endl;
       C_data << T << "\t" << C << endl;
-      if(C1>C) Tstep /= 1.1; 
-      else Tstep *= 1.1; 
+      //if(C1>C) Tstep /= 1.1; 
+      //else Tstep *= 1.1; 
       ///C1=C;
       
       double hi = ((Mx_pr2_aver - Mx_pr_aver*Mx_pr_aver)/T) / (double)(coorm.size()/2);
@@ -1575,4 +1607,3 @@ int main()
    cout << "\nThe End\n";
    return 0;
 }
-
