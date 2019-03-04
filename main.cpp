@@ -43,19 +43,22 @@ int main()
    double a = sqrt_3/2; //параметр решетки
    
    unsigned int total_num_of_spins_in_core = 6; //количество спинов в ядре
-   unsigned int total_num_of_spins_in_boundaries = 18; //количество спинов на границе = 24
-   unsigned int total_num_of_neighbors = 8; //количество соседей для каждого спина (для проверки)
+   unsigned int total_num_of_spins_in_boundaries = 24; //количество спинов на границе = 24
+   unsigned int total_num_of_neighbors = 14; //количество соседей для каждого спина (для проверки) = 14
    
    double interaction_radius_squared_for_core = 3/4. + 0.0001; //радиус взаимодействия в квадрате (от центра гексагона), 
    //используется для определения ядра и границы
-   double interaction_radius_squared_for_border = 27/4. - 0.0001; //радиус взаимодействия в квадрате (от центра гексагона), 
+   double interaction_radius_squared_for_border = 27/4. + 0.0001; //(2*a)^2, радиус взаимодействия в квадрате (от центра гексагона), 
    //используется для определения границы (+ 0.0001)
-   double interaction_radius_squared_for_neighbors = 3. - 0.0001; //(2*a)^2, радиус взаимодействия в квадрате (от спина до спина), 
+   ///double interaction_radius_squared_for_border = 3. - 0.0001; 
+   double interaction_radius_squared_for_neighbors = 3. + 0.0001; //(2*a)^2, радиус взаимодействия в квадрате (от спина до спина), 
    //используется для определения соседей
+   ///double interaction_radius_squared_for_neighbors = 3/4. + 0.0001;
    cout << "interaction_radius_squared = " << interaction_radius_squared_for_core << endl;
    
    double period_X=4*a;
    double period_Y=3;
+   
    
    hex_centers[0]=sqrt_3/2;        hex_centers[1]=0.75;
    hex_centers[2]=(3*sqrt_3)/2;    hex_centers[3]=0.75;
@@ -73,6 +76,7 @@ int main()
    //3.03109 = (7*sqrt_3)/4
    //2.16506 = (5*sqrt_3)/4
    
+   
    coor[0]=sqrt_3;             coor[1]=0.75;
    coor[2]=(3*sqrt_3)/4;       coor[3]=1.5;
    coor[4]=sqrt_3/4;           coor[5]=1.5;
@@ -86,6 +90,7 @@ int main()
    coor[18]=(7*sqrt_3)/4;      coor[19]=0;
    coor[20]=sqrt_3/2;          coor[21]=2.25;
    coor[22]=(3*sqrt_3)/2;      coor[23]=2.25;
+   
    
    //unit cell magnetic moments
    
@@ -312,6 +317,11 @@ int main()
    ///вывод всех спинов на экран
    //for(unsigned int i=0; i<coorm.size(); i+=2) cout<<"["<<i/2<<"] "<<coorm[i]<<", "<<coorm[i+1]<<endl;
    
+   
+   
+   ///
+   /// \определение ядер и границ для каждого гексагона
+   ///
    vector <vector <unsigned int> > hex_array(hex_centers.size()/2);
    vector <vector <unsigned int> > bound_array(hex_centers.size()/2);
    
@@ -672,6 +682,10 @@ int main()
    }
    
    
+   
+   ///
+   /// определение соседей для каждого спина
+   /// 
    cout << "searching neighbors...\n";
    
    struct spin_struct
@@ -920,6 +934,10 @@ int main()
     //*/
    
    
+   
+   ///
+   /// расчет свойств для блока спинов (ядро+граница)
+   /// 
    cout<<"sample calculation...\n";
    
    //структура номер, координаты, магнитные моменты спина
@@ -1303,7 +1321,8 @@ int main()
    
    
    ofstream C_data("C.txt"); //файл теплоемкости
-   ofstream hi_data("hi.txt"); //файл магнитной восприимчивости
+   ofstream chi_x_data("chi_x.txt"); //файл магнитной восприимчивости по оси x
+   ofstream chi_y_data("chi_y.txt"); //файл магнитной восприимчивости по оси y
    ofstream E_data("E.txt"); //файл энергии
    
    double E_aver = 0, E2_aver = 0; //средняя энергия и ее квадрат
@@ -1326,18 +1345,16 @@ int main()
    double My_aver_i = 0;
    double My2_aver_i = 0;
    
-   //интервалы вероятностей
-   double interval=0;
+   double interval=0;//интервалы вероятностей
    
    unsigned int rand_hex_num; //случайный гексагон
    
    unsigned int count_of_hex = hex_array.size();
    
    
-   double E_sys = 0;
-   double Mx_sys = 0;
-   double My_sys = 0;
+   double E_sys = 0, Mx_sys = 0, My_sys = 0;
    
+   //расчитываем начальную энергию системы E_sys и намагниченность Mx и My
    for(unsigned int i=0; i<coorm.size()-2; i+=2)
    {
       mx_i = mxmy[i];
@@ -1388,6 +1405,148 @@ int main()
       My_pr_aver = 0;
       My_pr2_aver = 0;
       
+      //heating (прогрев)
+      for(unsigned int MCS = 0; MCS<1000*coorm.size()/2; ++MCS)
+      {
+         rand_hex_num = rand()%count_of_hex;
+         
+         unsigned int boundary_dec=0; //конфигурация границы в десятичной системе
+         int bit;
+         for (unsigned int ii=0; ii<total_num_of_spins_in_boundaries; ++ii)
+         {
+            if (mxmy[bound_array[rand_hex_num][ii]+1]<0) 
+               bit = 0;
+            else 
+               bit = 1;
+            
+            boundary_dec = (boundary_dec | bit);
+            
+            if (ii<total_num_of_spins_in_boundaries-1) 
+               boundary_dec = boundary_dec<<1;
+         }
+         
+         unsigned int core_dec=0; //конфигурация ядра в десятичной системе
+         for (unsigned int ii=0; ii<total_num_of_spins_in_core; ++ii)
+         {
+            if (mxmy[hex_array[rand_hex_num][ii]+1]<0) 
+               bit = 0;
+            else 
+               bit = 1;
+            
+            core_dec = (core_dec | bit);
+            
+            if (ii<total_num_of_spins_in_core-1)
+               core_dec = core_dec<<1;
+         }
+         
+         unsigned int num_of_unique_EM_in_boundary = boundaries_EM_core[boundary_dec].size(); //g
+         
+         double P[num_of_unique_EM_in_boundary]; //массив вероятностей энергий
+         
+         E_sys  -= boundaries_core_EM[boundary_dec][core_dec].E;
+         Mx_sys -= boundaries_core_EM[boundary_dec][core_dec].Mx;
+         My_sys -= boundaries_core_EM[boundary_dec][core_dec].My;
+         
+         Z = 0; //статсумма
+         
+         //считаем статсумму
+         for(set_of_states=0; set_of_states<num_of_unique_EM_in_boundary; ++set_of_states)
+         {
+            //вырождение * exp
+            P[set_of_states] = boundaries_EM_core[boundary_dec][set_of_states].state_array.size()*
+                  exp((double)(-(boundaries_EM_core[boundary_dec][set_of_states].E-Emin_array[boundary_dec])/T));
+            Z += P[set_of_states];
+         }
+         
+         r0_1 = distribution_real(generator);
+         
+         //перебираем интервалы вероятностей
+         interval=0;
+         flag=0;
+         
+         //считаем вероятности
+         for(set_of_states=0; set_of_states<num_of_unique_EM_in_boundary; ++set_of_states)
+         {
+            P[set_of_states] /= Z;
+            interval+=P[set_of_states];
+            if(r0_1<=interval && flag==0)
+            {
+               total_set_of_states = set_of_states;
+               flag = 1;
+            }
+         }
+         
+         Mx_sys += boundaries_EM_core[boundary_dec][total_set_of_states].Mx;
+         My_sys += boundaries_EM_core[boundary_dec][total_set_of_states].My;
+         E_sys += boundaries_EM_core[boundary_dec][total_set_of_states].E;
+         
+         //выбираем случайную конфигурацию с одинаковыми параметрами
+         rand_state = rand() % boundaries_EM_core[boundary_dec][total_set_of_states].state_array.size();
+         
+         //запоминаем конфигурацию
+         rand_state = boundaries_EM_core[boundary_dec][total_set_of_states].state_array[rand_state];
+         
+         //переводим в двоичную систему и в +-1
+         int value;
+         count=0;
+         for(bit=total_num_of_spins_in_core-1; bit>=0; --bit)
+         {
+            value = (1 & rand_state >> bit);
+            
+            if(value==0)
+            {
+               mxmy[hex_array[rand_hex_num][count]] = -sample_core[count].mx;
+               mxmy[hex_array[rand_hex_num][count]+1] = -sample_core[count].my;
+            }
+            else
+            {
+               mxmy[hex_array[rand_hex_num][count]] = sample_core[count].mx;
+               mxmy[hex_array[rand_hex_num][count]+1] = sample_core[count].my;
+            }
+            
+            count++;
+         }
+         //здесь заканчивается прогрев 
+      }
+      
+      cout<<"E_sys after heating = "<<E_sys<<", Mx_sys = "<<Mx_sys<<", My_sys = "<<My_sys<<endl;
+      
+      E_sys = 0, Mx_sys = 0, My_sys = 0;
+      
+      
+      /////////////////////////////////////////////////////////////////////////////////
+      //!пересчитываем энергию системы E_sys и намагниченность Mx и My для актуализации
+      for(unsigned int i=0; i<coorm.size()-2; i+=2)
+      {
+         mx_i = mxmy[i];
+         my_i = mxmy[i+1];
+         
+         for(unsigned int neigh=0; neigh<neighbors[i/2].size(); ++neigh)
+         {
+            if(neighbors[i/2][neigh].num > i)
+            {
+               mx_j = mxmy[neighbors[i/2][neigh].num];
+               my_j = mxmy[neighbors[i/2][neigh].num+1];
+               
+               X = coorm[i]-neighbors[i/2][neigh].x;
+               Y = coorm[i+1]-neighbors[i/2][neigh].y;
+               
+               E_sys+= (mx_i*mx_j + my_i*my_j)/
+                     sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y) -
+                     3*(mx_i*X+my_i*Y)*(mx_j*X+my_j*Y)/
+                     sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y)/sqrt(X*X+Y*Y);
+            }
+         }
+         
+         Mx_sys += mx_i;
+         My_sys += my_i;
+      }
+      
+      cout<<"correct E_sys = "<<E_sys<<", Mx_sys = "<<Mx_sys<<", My_sys = "<<My_sys<<endl;
+      /////////////////////////////////////////////////////////////////////////////
+      
+      
+      //Monte Carlo
       for(unsigned int MCS = 0; MCS<NumMC*coorm.size()/2; ++MCS)
       {
          rand_hex_num = rand()%count_of_hex;
@@ -1584,9 +1743,13 @@ int main()
       //else Tstep *= 1.1; 
       ///C1=C;
       
-      double hi = ((Mx_pr2_aver - Mx_pr_aver*Mx_pr_aver)/T) / (double)(coorm.size()/2);
-      cout << "hi = " << hi << endl << endl;
-      hi_data << T << "\t" << hi << endl;
+      double chi_x = ((Mx_pr2_aver - Mx_pr_aver*Mx_pr_aver)/T) / (double)(coorm.size()/2);
+      cout << "chi_x = " << chi_x << endl << endl;
+      chi_x_data << T << "\t" << chi_x << endl;
+      
+      double chi_y = ((My_pr2_aver - My_pr_aver*My_pr_aver)/T) / (double)(coorm.size()/2);
+      cout << "chi_y = " << chi_y << endl << endl;
+      chi_x_data << T << "\t" << chi_y << endl;
       
       E_data << T << "\t" << E_aver << endl;
       
@@ -1596,7 +1759,8 @@ int main()
    }
    
    C_data.close();
-   hi_data.close();
+   chi_x_data.close();
+   chi_y_data.close();
    E_data.close();
    
    /** <<<<--------------------------------------------------- */
