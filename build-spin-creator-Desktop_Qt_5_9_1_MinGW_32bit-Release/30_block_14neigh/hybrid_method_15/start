@@ -1,0 +1,11 @@
+#!/bin/sh
+#PBS -N hybrid_method_15
+#PBS -q workq
+#PBS -j oe
+#PBS -m abe
+#PBS -M mak2424@mail.ru
+#PBS -l select=1:ncpus=8:mem=120gb
+
+cd /home/amakarov/hybrid_method_15
+
+./spin-creator > out_info.txt

@@ -18,13 +18,15 @@ bool is_equal(double a, double b) { return fabs(a-b) <= DBL_EPSILON * fmax(fabs(
 
 #define Tmin 0.0001
 #define Tmax 10.01
-float Tstep = 0.01;
+float Tstep = 0.1;
 
 double C1=0;
 
 
 int main()
 {
+   int numuc = 5;
+   
    srand(5);
    default_random_engine generator; //тип генератора случайных чисел
    
@@ -134,10 +136,8 @@ int main()
    
    
    
-   int numuc = 5;
-   
    cout<<"Input Number of Unit Cels in linear dimension "<<endl;
-   cin>>numuc;
+   ///cin>>numuc;
    cout<<"Lenear size of system in unit cell's spins = "<<numuc*coor.size()/2<<" spins"<<endl;
    cout<<"Number of spins in system in linear = "<<numuc*coor.size()/2<<endl;
    
@@ -1326,23 +1326,11 @@ int main()
    ofstream C_data("C.txt"); //файл теплоемкости
    ofstream chi_x_data("chi_x.txt"); //файл магнитной восприимчивости по оси x
    ofstream chi_y_data("chi_y.txt"); //файл магнитной восприимчивости по оси y
+   ofstream E_data("E.txt"); //файл энергии
    
-   ofstream E_aver_data("E_aver.txt"); //файл средней энергии
-   ofstream E2_aver_data("E2_aver.txt"); //файл средней энергии в квадрате
-   ofstream E4_aver_data("E4_aver.txt"); //файл средней энергии в 4 степени
-   
-   ofstream Mx_aver_data("Mx_aver.txt"); //файл средней намагниченности по оси X
-   ofstream Mx2_aver_data("Mx2_aver.txt"); //файл средней намагниченности в квадрате по оси X
-   ofstream Mx4_aver_data("Mx4_aver.txt"); //файл средней намагниченности в 4 степени по оси X
-   
-   ofstream My_aver_data("My_aver.txt"); //файл средней намагниченности по оси Y
-   ofstream My2_aver_data("My2_aver.txt"); //файл средней намагниченности в квадрате по оси Y
-   ofstream My4_aver_data("My4_aver.txt"); //файл средней намагниченности в 4 степени по оси Y
-   
-   
-   double E_aver = 0, E2_aver = 0, E4_aver = 0; //средняя энергия, ее квадрат и 4 степень
-   double Mx_pr_aver = 0, Mx_pr2_aver = 0, Mx_pr4_aver = 0; //средняя проекция намагниченности по оси X и ее квадрат и 4 степень
-   double My_pr_aver = 0, My_pr2_aver = 0, My_pr4_aver = 0; //средняя проекция намагниченности оси Y, ее квадрат и 4 степень
+   double E_aver = 0, E2_aver = 0; //средняя энергия и ее квадрат
+   double Mx_pr_aver = 0, Mx_pr2_aver = 0; //средняя проекция намагниченности и ее квадрат
+   double My_pr_aver = 0, My_pr2_aver = 0; //средняя проекция намагниченности и ее квадрат
    
    
    unsigned int set_of_states, total_set_of_states=0;
@@ -1353,18 +1341,12 @@ int main()
    
    double Z = 0; //статсумма
    double r0_1; //число от 0 до 1
-   
    double E_aver_i = 0;
    double E2_aver_i = 0;
-   double E4_aver_i = 0;
-   
    double Mx_aver_i = 0;
    double Mx2_aver_i = 0;
-   double Mx4_aver_i = 0;
-   
    double My_aver_i = 0;
    double My2_aver_i = 0;
-   double My4_aver_i = 0;
    
    double interval=0;//интервалы вероятностей
    
@@ -1409,8 +1391,8 @@ int main()
    
    
    //проход блока по системе
-   ///for(float T = Tmin; T<Tmax; T+=Tstep) //цикл по температуре
-   for(float T = Tmax; T>Tmin; T-=Tstep)
+   //for(float T = Tmin; T<Tmax; T+=Tstep) //цикл по температуре
+   for(float T = Tmax; T>Tmin; T-=Tstep) //цикл по температуре
    {
       if(T<0.2) Tstep=0.001;
       else 
@@ -1539,7 +1521,6 @@ int main()
       E_sys = 0, Mx_sys = 0, My_sys = 0;
       
       
-      /**
       /////////////////////////////////////////////////////////////////////////////////
       //!пересчитываем энергию системы E_sys и намагниченность Mx и My для актуализации
       for(unsigned int i=0; i<coorm.size(); i+=2)
@@ -1570,7 +1551,7 @@ int main()
       
       cout<<"correct E_sys = "<<E_sys<<", Mx_sys = "<<Mx_sys<<", My_sys = "<<My_sys<<endl;
       /////////////////////////////////////////////////////////////////////////////
-      //*/
+      
       
       //Monte Carlo
       for(unsigned int MCS = 0; MCS<NumMC*coorm.size()/2; ++MCS)
@@ -1626,18 +1607,12 @@ int main()
          ///cout << "E_sys before = " << E_sys << endl;
          
          Z = 0; //статсумма
-         
          E_aver_i = 0;
          E2_aver_i = 0;
-         E4_aver_i = 0;
-         
          Mx_aver_i = 0;
          Mx2_aver_i = 0;
-         Mx4_aver_i = 0;
-         
          My_aver_i = 0;
          My2_aver_i = 0;
-         My4_aver_i = 0;
          
          //считаем статсумму
          for(set_of_states=0; set_of_states<num_of_unique_EM_in_boundary; ++set_of_states)
@@ -1664,34 +1639,24 @@ int main()
          
          //cout<<"E_aver_i = "<<E_aver_i<<endl;
          
-         double E_temp, Mx_temp, My_temp;
-         
          //считаем вероятности
          for(set_of_states=0; set_of_states<num_of_unique_EM_in_boundary; ++set_of_states)
          {
             P[set_of_states] /= Z;
             ///sum+=P[set_of_states];
             ///cout << "P"<<set_of_states<<"= " << P[set_of_states] << endl;
-            
-            /// 
-            E_temp = E_sys+boundaries_EM_core[boundary_dec][set_of_states].E;
-            Mx_temp = Mx_sys+boundaries_EM_core[boundary_dec][set_of_states].Mx;
-            My_temp = My_sys+boundaries_EM_core[boundary_dec][set_of_states].My;
-            /// 
-            
-            E_aver_i += P[set_of_states]*E_temp;
-            Mx_aver_i += P[set_of_states]*Mx_temp;
-            My_aver_i += P[set_of_states]*My_temp;
+            E_aver_i += P[set_of_states]*(E_sys+boundaries_EM_core[boundary_dec][set_of_states].E);
             
             ///cout<<"E_aver_i = "<<E_aver_i<<endl;
             
-            E2_aver_i += P[set_of_states]*E_temp*E_temp;
-            Mx2_aver_i += P[set_of_states]*Mx_temp*Mx_temp;
-            My2_aver_i += P[set_of_states]*My_temp*My_temp;
+            Mx_aver_i += P[set_of_states]*(Mx_sys+boundaries_EM_core[boundary_dec][set_of_states].Mx);
+            My_aver_i += P[set_of_states]*(My_sys+boundaries_EM_core[boundary_dec][set_of_states].My);
             
-            E4_aver_i += P[set_of_states]*E_temp*E_temp*E_temp*E_temp;
-            Mx4_aver_i += P[set_of_states]*Mx_temp*Mx_temp*Mx_temp*Mx_temp;
-            My4_aver_i += P[set_of_states]*My_temp*My_temp*My_temp*My_temp;
+            
+            E2_aver_i += P[set_of_states]*(E_sys+boundaries_EM_core[boundary_dec][set_of_states].E)*(E_sys+boundaries_EM_core[boundary_dec][set_of_states].E);
+            
+            Mx2_aver_i += P[set_of_states]*(Mx_sys+boundaries_EM_core[boundary_dec][set_of_states].Mx)*(Mx_sys+boundaries_EM_core[boundary_dec][set_of_states].Mx);
+            My2_aver_i += P[set_of_states]*(My_sys+boundaries_EM_core[boundary_dec][set_of_states].My)*(My_sys+boundaries_EM_core[boundary_dec][set_of_states].My);
             
             interval+=P[set_of_states];
             if(r0_1<=interval && flag==0)
@@ -1709,16 +1674,12 @@ int main()
          E_aver += (E_aver_i - E_aver) / (double)(MCS + 1);
          //E2_aver += (E_aver_i*E_aver_i - E2_aver) / (double)(MCS + 1);
          E2_aver += (E2_aver_i - E2_aver) / (double)(MCS + 1);
-         E4_aver += (E4_aver_i - E4_aver) / (double)(MCS + 1);
          
          Mx_pr_aver += (abs(Mx_aver_i) - Mx_pr_aver) / (double)(MCS + 1);
+         My_pr_aver += (abs(My_aver_i) - My_pr_aver) / (double)(MCS + 1);
          //Mx_pr2_aver += ((Mx_aver_i*Mx_aver_i) - Mx_pr2_aver) / (double)(MCS + 1);
          Mx_pr2_aver += (Mx2_aver_i - Mx_pr2_aver) / (double)(MCS + 1);
-         Mx_pr4_aver += (Mx4_aver_i - Mx_pr4_aver) / (double)(MCS + 1);
-         
-         My_pr_aver += (abs(My_aver_i) - My_pr_aver) / (double)(MCS + 1);
          My_pr2_aver += (My2_aver_i - My_pr2_aver) / (double)(MCS + 1);
-         My_pr4_aver += (My4_aver_i - My_pr4_aver) / (double)(MCS + 1);
          
          ///cout<<"E_aver = "<<E_aver<<endl;
          ///system("pause");
@@ -1790,65 +1751,24 @@ int main()
       ///C1=C;
       
       double chi_x = ((Mx_pr2_aver - Mx_pr_aver*Mx_pr_aver)/T) / (double)(coorm.size()/2);
-      cout << "chi_x = " << chi_x << endl;
+      cout << "chi_x = " << chi_x << endl << endl;
       chi_x_data << T << "\t" << chi_x << endl;
       
       double chi_y = ((My_pr2_aver - My_pr_aver*My_pr_aver)/T) / (double)(coorm.size()/2);
       cout << "chi_y = " << chi_y << endl << endl;
       chi_y_data << T << "\t" << chi_y << endl;
       
-      E_aver_data << T << "\t" << E_aver << endl;
-      E2_aver_data << T << "\t" << E2_aver << endl;
-      E4_aver_data << T << "\t" << E4_aver << endl;
-      
-      Mx_aver_data << T << "\t" << Mx_pr_aver << endl;
-      Mx2_aver_data << T << "\t" << Mx_pr2_aver << endl;
-      Mx4_aver_data << T << "\t" << Mx_pr4_aver << endl;
-      
-      My_aver_data << T << "\t" << My_pr_aver << endl;
-      My2_aver_data << T << "\t" << My_pr2_aver << endl;
-      My4_aver_data << T << "\t" << My_pr4_aver << endl;
+      E_data << T << "\t" << E_aver << endl;
       
       ///system("pause");
       
       //здесь заканчивается перебор температур 
    }
    
-   //записываем последнюю конфигурацию в файл
-   ofstream GS_conf("GS_conf.txt");
-   GS_conf<<"[header]"<<endl;
-   GS_conf<<"dimensions=2"<<endl;
-   GS_conf<<"size=30"<<endl;
-   GS_conf<<"state="<<endl;
-   for(unsigned int i=0; i<coorm.size(); i+=2) GS_conf<<"0";
-   GS_conf<<endl;
-   GS_conf<<"[parts]"<<endl;
-   
-   for(unsigned int i=0; i<coorm.size(); i+=2)
-   {
-      GS_conf<<i/2<<"\t"; //порядковый номер
-      GS_conf<<coorm[i]<<"\t"<<coorm[i+1]<<"\t"<<"0"<<"\t"; //координаты x,y,z
-      GS_conf<<mxmy[i]<<"\t"<<mxmy[i+1]<<"\t"<<"0"<<"\t"; //магнитные моменты mx,my,mz
-      GS_conf<<"0"<<endl;
-   }
-   GS_conf.close();
-   
-   
    C_data.close();
    chi_x_data.close();
    chi_y_data.close();
-   
-   E_aver_data.close();
-   E2_aver_data.close();
-   E4_aver_data.close();
-   
-   Mx_aver_data.close();
-   Mx2_aver_data.close();
-   Mx4_aver_data.close();
-   
-   My_aver_data.close();
-   My2_aver_data.close();
-   My4_aver_data.close();
+   E_data.close();
    
    /** <<<<--------------------------------------------------- */
    
