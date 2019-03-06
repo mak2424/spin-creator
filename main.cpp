@@ -1815,11 +1815,11 @@ int main()
    }
    
    //записываем последнюю конфигурацию в файл
-   ofstream GS_conf("GS_conf.txt");
+   ofstream GS_conf("GS_conf.mfsys");
    GS_conf<<"[header]"<<endl;
    GS_conf<<"dimensions=2"<<endl;
-   GS_conf<<"size=30"<<endl;
-   GS_conf<<"state="<<endl;
+   GS_conf<<"size="<<coorm.size()/2<<endl;
+   GS_conf<<"state=";
    for(unsigned int i=0; i<coorm.size(); i+=2) GS_conf<<"0";
    GS_conf<<endl;
    GS_conf<<"[parts]"<<endl;
