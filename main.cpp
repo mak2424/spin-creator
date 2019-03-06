@@ -1531,17 +1531,17 @@ int main()
          }
          //здесь заканчивается прогрев 
       }
-      //*/
-      
-      
       cout<<"E_sys after heating = "<<E_sys<<", Mx_sys = "<<Mx_sys<<", My_sys = "<<My_sys<<endl;
       
-      E_sys = 0, Mx_sys = 0, My_sys = 0;
+      //*/
+      
       
       
       /**
       /////////////////////////////////////////////////////////////////////////////////
       //!пересчитываем энергию системы E_sys и намагниченность Mx и My для актуализации
+      E_sys = 0, Mx_sys = 0, My_sys = 0;
+      
       for(unsigned int i=0; i<coorm.size(); i+=2)
       {
          mx_i = mxmy[i];
